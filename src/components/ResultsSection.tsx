@@ -7,7 +7,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 const cases = [
   {
-    id:        1,
+    id:        'case-cerebral-palsy',
     tag:       'ДЦП',
     tagColor:  'bg-sky-100 text-sky-700',
     image:     '/assets/massage-result.jpg',
@@ -21,8 +21,8 @@ const cases = [
     flip: 'left',
   },
   {
-    id:       2,
-    tag:      'Косоглазие',
+    id:       'case-strabismus',
+    tag:      'Врождённое косоглазие',
     tagColor: 'bg-sage-100 text-sage-700',
     image:    '/assets/strabismus-result.jpg',
     heading:  'Победа над косоглазием',
@@ -35,16 +35,16 @@ const cases = [
     flip: 'right',
   },
   {
-    id:       3,
-    tag:      'Синдром Туретта',
+    id:       'case-parkinsons',
+    tag:      'Болезнь Паркинсона',
     tagColor: 'bg-nude-100 text-nude-700',
     image:    '/assets/parkinsons-result.jpg',
-    heading:  'Жизнь без тиков',
-    patient:  'Мальчик, 12 лет',
-    text:     'Подросток с синдромом Туретта страдал от множественных моторных и вокальных тиков, которые мешали учёбе и общению. После курса нейрометодики тики существенно уменьшились, а качество жизни кардинально улучшилось.',
+    heading:  'Работа с болезнью Паркинсона',
+    patient:  'Индивидуальная программа',
+    text:     'При болезни Паркинсона работа строится через восстановление связи тела и нервной системы: пальпация, мягкое воздействие, снижение мышечного напряжения и постепенное возвращение контроля движений.',
     metrics:  [
-      { value: '6', label: 'месяцев курса' },
-      { value: '90%', label: 'снижение тиков' },
+      { value: '1:1', label: 'подход' },
+      { value: '15+', label: 'лет практики' },
     ],
     flip: 'bottom',
   },
@@ -170,6 +170,7 @@ export default function ResultsSection() {
           {cases.map((c, i) => (
             <div
               key={c.id}
+              id={c.id}
               className={`case-card card-hover rounded-2xl overflow-hidden border border-slate-200 shadow-lg flex flex-col ${
                 i % 2 === 1 ? 'md:flex-row-reverse' : 'md:flex-row'
               }`}

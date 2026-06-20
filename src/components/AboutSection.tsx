@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -59,6 +59,8 @@ const services = [
 
 export default function AboutSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
+  const [activePreview, setActivePreview] = useState<string | null>(null)
+  const [armedPreview, setArmedPreview] = useState<string | null>(null)
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
@@ -151,16 +153,56 @@ export default function AboutSection() {
 
             <div className="about-bio space-y-5 text-slate-600 leading-relaxed font-sans text-base sm:text-[1.05rem]">
               <p>
-                Меня зовут <strong className="text-slate-800">Малай Наталья Борисовна</strong>. Более 15 лет я
-                посвятила изучению и практике нейрометодики — уникальной системы воздействия на нервную систему
-                человека, которая позволяет достигать результатов там, где традиционная медицина отступает.
+                Зовут меня <strong className="text-slate-800">Наталья Борисовна Малай</strong>. Я нейрореабилитолог.
+                Этот выбор был сделан благодаря способностям, которые проявились ещё в детстве.
               </p>
               <p>
-                Я прошла обучение у ведущих специалистов в области нейрореабилитации и нейропсихологии, постоянно
-                совершенствую свои методики и применяю индивидуальный подход к каждому пациенту.
+                Из-за отсутствия речи до 15 лет у меня развилась способность тонко чувствовать природу и состояние
+                человека. Первый массаж я сделала в 7 лет, и он помог моей бабушке. Со своей речью я работала
+                самостоятельно: пела, читала, тренировалась каждый день. Помогая себе и родственникам, я на практике
+                училась понимать, как работает природа.
               </p>
               <p>
-                Моя миссия — помочь вам обрести здоровье и качество жизни через силу нашего собственного тела.
+                На протяжении многих лет с разными заболеваниями я справлялась без таблеток. В 2007 году познакомилась
+                с кардиологом, который помог мне основать методику пальпации. Общение и обучение у квалифицированных
+                специалистов, профессоров и академиков помогли сформулировать авторскую методику.
+              </p>
+              <p>
+                Благодаря знаниям, опыту и практике я стала находить не просто причину болезни, а её происхождение.
+                Теперь я бросаю вызов традиционной медицине и знаю: в природе нет болезни, с которой нельзя справиться.
+              </p>
+
+              <div className="grid sm:grid-cols-2 gap-3 py-1">
+                <CasePreviewLink
+                  id="parkinsons"
+                  href="#case-parkinsons"
+                  title="Болезнь Паркинсона"
+                  image="/assets/parkinsons-result.jpg"
+                  text="Кейс о восстановлении контроля движений и качества жизни через авторскую нейрометодику."
+                  activePreview={activePreview}
+                  armedPreview={armedPreview}
+                  setActivePreview={setActivePreview}
+                  setArmedPreview={setArmedPreview}
+                />
+                <CasePreviewLink
+                  id="strabismus"
+                  href="#case-strabismus"
+                  title="Врождённое косоглазие"
+                  image="/assets/strabismus-result.jpg"
+                  text="Кейс о работе с мышечным тонусом глаза и восстановлением естественного положения без операции."
+                  activePreview={activePreview}
+                  armedPreview={armedPreview}
+                  setActivePreview={setActivePreview}
+                  setArmedPreview={setArmedPreview}
+                />
+              </div>
+
+              <p>
+                Работаю по специальным программам: дефект речи, аутизм у детей, ДЦП и другие сложные состояния.
+                В основе работы — индивидуальный подход к каждому.
+              </p>
+              <p>
+                Думаю, что каждый человек должен чувствовать свою природу и быть на своём месте.
               </p>
             </div>
 
@@ -251,5 +293,92 @@ export default function AboutSection() {
 
       </div>
     </section>
+  )
+}
+
+function CasePreviewLink({
+  id,
+  href,
+  title,
+  image,
+  text,
+  activePreview,
+  armedPreview,
+  setActivePreview,
+  setArmedPreview,
+}: {
+  id: string
+  href: string
+  title: string
+  image: string
+  text: string
+  activePreview: string | null
+  armedPreview: string | null
+  setActivePreview: (id: string | null) => void
+  setArmedPreview: (id: string | null) => void
+}) {
+  const isActive = activePreview === id
+  const isArmed = armedPreview === id
+  const isShown = isActive || isArmed
+
+  const goToCase = () => {
+    const target = document.querySelector(href)
+    if (!target) return
+
+    const top = target.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.12
+    window.scrollTo({ top, behavior: 'smooth' })
+    window.history.replaceState(null, '', href)
+    setActivePreview(null)
+    setArmedPreview(null)
+  }
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setActivePreview(id)}
+      onMouseLeave={() => {
+        if (!isArmed) setActivePreview(null)
+      }}
+      onFocus={() => setActivePreview(id)}
+      onBlur={() => setActivePreview(null)}
+    >
+      <button
+        type="button"
+        onClick={() => {
+          if (isActive || isArmed) {
+            goToCase()
+            return
+          }
+          setActivePreview(id)
+          setArmedPreview(id)
+        }}
+        className="w-full min-h-12 rounded-2xl border border-sky-200 bg-white/70 px-4 py-3 text-left text-sm font-semibold text-sky-700 shadow-sm transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
+      >
+        {title}
+        <span className="block text-xs font-medium text-slate-500">наведите или нажмите для просмотра</span>
+      </button>
+
+      <div
+        className={`absolute left-0 top-[calc(100%+10px)] z-30 w-full min-w-[260px] overflow-hidden rounded-2xl border border-white/80 bg-white shadow-2xl transition-all duration-200 ${
+          isShown ? 'translate-y-0 opacity-100 pointer-events-auto' : '-translate-y-2 opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="relative h-28">
+          <Image src={image} alt={title} fill className="object-cover" sizes="260px" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/55 to-transparent" />
+          <div className="absolute bottom-3 left-3 right-3 text-sm font-semibold text-white">{title}</div>
+        </div>
+        <div className="space-y-3 p-4">
+          <p className="text-xs leading-relaxed text-slate-600">{text}</p>
+          <button
+            type="button"
+            onClick={goToCase}
+            className="min-h-10 w-full rounded-full bg-sky-600 px-4 text-xs font-semibold text-white transition-colors hover:bg-sky-700"
+          >
+            Перейти к карточке
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
