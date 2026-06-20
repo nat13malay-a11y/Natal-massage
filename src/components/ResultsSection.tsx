@@ -10,7 +10,7 @@ const cases = [
     id:        'case-cerebral-palsy',
     tag:       'ДЦП',
     tagColor:  'bg-sky-100 text-sky-700',
-    image:     '/assets/massage-result.jpg',
+    image:     '/assets/IMG_1217.gif',
     heading:   'Возвращение движения',
     patient:   'Ребёнок, 6 лет',
     text:      'Мальчик с диагнозом ДЦП не мог самостоятельно ходить и контролировать движения рук. После курса нейрометодики удалось восстановить двигательную функцию: ребёнок начал ходить без поддержки и выполнять точные движения руками.',
@@ -181,6 +181,7 @@ export default function ResultsSection() {
                   src={c.image}
                   alt={c.heading}
                   fill
+                  unoptimized={c.image.endsWith('.gif')}
                   style={{ objectFit: 'cover', objectPosition: 'center' }}
                   sizes="(max-width: 768px) 100vw, 40vw"
                 />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -59,8 +59,6 @@ const services = [
 
 export default function AboutSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const [activePreview, setActivePreview] = useState<string | null>(null)
-  const [armedPreview, setArmedPreview] = useState<string | null>(null)
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
@@ -170,93 +168,79 @@ export default function AboutSection() {
               <p>
                 Благодаря знаниям, опыту и практике я стала находить не просто причину болезни, а её происхождение.
                 И теперь бросаю вызов традиционной медицине.
+                {' '}
+                <CaseTextLink href="#case-parkinsons">Болезнь Паркинсона</CaseTextLink>
               </p>
-
-              <div className="py-1">
-                <CasePreviewLink
-                  id="parkinsons"
-                  href="#case-parkinsons"
-                  title="Болезнь Паркинсона"
-                  image="/assets/parkinsons-result.jpg"
-                  text="Кейс о восстановлении контроля движений и качества жизни через авторскую нейрометодику."
-                  activePreview={activePreview}
-                  armedPreview={armedPreview}
-                  setActivePreview={setActivePreview}
-                  setArmedPreview={setArmedPreview}
-                />
-              </div>
 
               <p>
                 Знаю, что в природе нет болезни, с которой нельзя не справиться.
+                {' '}
+                <CaseTextLink href="#case-strabismus">Врождённое косоглазие</CaseTextLink>
               </p>
-
-              <div className="py-1">
-                <CasePreviewLink
-                  id="strabismus"
-                  href="#case-strabismus"
-                  title="Врождённое косоглазие"
-                  image="/assets/strabismus-result.jpg"
-                  text="Кейс о работе с мышечным тонусом глаза и восстановлением естественного положения без операции."
-                  activePreview={activePreview}
-                  armedPreview={armedPreview}
-                  setActivePreview={setActivePreview}
-                  setArmedPreview={setArmedPreview}
-                />
-              </div>
 
               <p>
                 Работаю по специальным программам: дефект речи, аутизм у детей, ДЦП и другие сложные состояния.
                 В основе работы — индивидуальный подход к каждому.
+                {' '}
+                <CaseTextLink href="#case-cerebral-palsy">Лечение ДЦП</CaseTextLink>
               </p>
               <p>
                 Думаю, что каждый человек должен чувствовать свою природу и быть на своём месте.
               </p>
             </div>
-
-            {/* Certificate preview */}
-            <div className="about-bio flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 glass p-5 sm:p-6 rounded-2xl border border-nude-200 w-full sm:w-fit max-w-2xl">
-              <div className="w-full sm:w-44 md:w-52 lg:w-56 aspect-[4/3] rounded-xl overflow-hidden flex-shrink-0 shadow-lg bg-white">
-                <Image
-                  src="/assets/certificate.jpg"
-                  alt="Сертификат специалиста"
-                  width={448}
-                  height={336}
-                  style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                />
-              </div>
-              <div>
-                <div className="font-semibold text-slate-700 font-sans text-base">Сертифицированный специалист</div>
-                <div className="text-sm text-slate-500 font-sans">Нейрометодика и реабилитация</div>
-              </div>
-            </div>
           </div>
 
           {/* Photo */}
-          <div className="about-photo relative">
-            <div
-              className="absolute inset-0 -m-4"
-              style={{
-                background: 'radial-gradient(ellipse, rgba(195,225,245,0.4) 0%, transparent 70%)',
-              }}
-            />
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl img-reveal-wrapper"
-                 style={{ height: 'clamp(320px, 64vw, 520px)' }}>
-              <Image
-                src="/assets/massage.jpg"
-                alt="Наталья за работой"
-                fill
-                style={{ objectFit: 'cover', objectPosition: 'center' }}
-                sizes="(max-width: 768px) 100vw, 50vw"
+          <div className="about-photo space-y-5 sm:space-y-6">
+            <div className="relative">
+              <div
+                className="absolute inset-0 -m-4"
+                style={{
+                  background: 'radial-gradient(ellipse, rgba(195,225,245,0.4) 0%, transparent 70%)',
+                }}
               />
-              {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent" />
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl img-reveal-wrapper"
+                   style={{ height: 'clamp(320px, 64vw, 520px)' }}>
+                <Image
+                  src="/assets/massage.jpg"
+                  alt="Наталья за работой"
+                  fill
+                  style={{ objectFit: 'cover', objectPosition: 'center' }}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent" />
+              </div>
+
+              {/* Floating badge */}
+              <div className="absolute right-3 sm:-right-4 top-5 sm:top-8 glass rounded-2xl p-4 shadow-xl">
+                <div className="text-center">
+                  <div className="stat-number" style={{ fontSize: '2rem' }}>15+</div>
+                  <div className="text-xs text-slate-500 font-sans">лет опыта</div>
+                </div>
+              </div>
             </div>
 
-            {/* Floating badge */}
-            <div className="absolute right-3 sm:-right-4 top-5 sm:top-8 glass rounded-2xl p-4 shadow-xl">
-              <div className="text-center">
-                <div className="stat-number" style={{ fontSize: '2rem' }}>15+</div>
-                <div className="text-xs text-slate-500 font-sans">лет опыта</div>
+            {/* Certificate preview */}
+            <div className="glass rounded-2xl border border-nude-200 p-4 sm:p-5 shadow-lg">
+              <div className="grid grid-cols-[minmax(132px,0.9fr)_1fr] gap-4 sm:gap-5 items-center">
+                <div className="aspect-[4/3] rounded-xl overflow-hidden shadow-lg bg-white">
+                  <Image
+                    src="/assets/certificate.jpg"
+                    alt="Сертификат специалиста"
+                    width={448}
+                    height={336}
+                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="font-semibold text-slate-700 font-sans text-sm sm:text-base leading-snug">
+                    Сертифицированный специалист по реабилитации.
+                  </div>
+                  <div className="text-sm text-slate-500 font-sans leading-snug">
+                    Нейрореабилитолог, авторская нейро методика.
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -303,31 +287,7 @@ export default function AboutSection() {
   )
 }
 
-function CasePreviewLink({
-  id,
-  href,
-  title,
-  image,
-  text,
-  activePreview,
-  armedPreview,
-  setActivePreview,
-  setArmedPreview,
-}: {
-  id: string
-  href: string
-  title: string
-  image: string
-  text: string
-  activePreview: string | null
-  armedPreview: string | null
-  setActivePreview: (id: string | null) => void
-  setArmedPreview: (id: string | null) => void
-}) {
-  const isActive = activePreview === id
-  const isArmed = armedPreview === id
-  const isShown = isActive || isArmed
-
+function CaseTextLink({ href, children }: { href: string; children: React.ReactNode }) {
   const goToCase = () => {
     const target = document.querySelector(href)
     if (!target) return
@@ -335,57 +295,15 @@ function CasePreviewLink({
     const top = target.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.12
     window.scrollTo({ top, behavior: 'smooth' })
     window.history.replaceState(null, '', href)
-    setActivePreview(null)
-    setArmedPreview(null)
   }
 
   return (
-    <div
-      className="relative"
-      onMouseEnter={() => setActivePreview(id)}
-      onMouseLeave={() => {
-        if (!isArmed) setActivePreview(null)
-      }}
-      onFocus={() => setActivePreview(id)}
-      onBlur={() => setActivePreview(null)}
+    <button
+      type="button"
+      onClick={goToCase}
+      className="inline cursor-pointer font-semibold text-sky-600 underline decoration-sky-300 decoration-2 underline-offset-4 transition-colors hover:text-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
     >
-      <button
-        type="button"
-        onClick={() => {
-          if (isActive || isArmed) {
-            goToCase()
-            return
-          }
-          setActivePreview(id)
-          setArmedPreview(id)
-        }}
-        className="w-full min-h-12 rounded-2xl border border-sky-200 bg-white/70 px-4 py-3 text-left text-sm font-semibold text-sky-700 shadow-sm transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
-      >
-        {title}
-        <span className="block text-xs font-medium text-slate-500">наведите или нажмите для просмотра</span>
-      </button>
-
-      <div
-        className={`absolute left-0 top-[calc(100%+10px)] z-30 w-full min-w-[260px] overflow-hidden rounded-2xl border border-white/80 bg-white shadow-2xl transition-all duration-200 ${
-          isShown ? 'translate-y-0 opacity-100 pointer-events-auto' : '-translate-y-2 opacity-0 pointer-events-none'
-        }`}
-      >
-        <div className="relative h-28">
-          <Image src={image} alt={title} fill className="object-cover" sizes="260px" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/55 to-transparent" />
-          <div className="absolute bottom-3 left-3 right-3 text-sm font-semibold text-white">{title}</div>
-        </div>
-        <div className="space-y-3 p-4">
-          <p className="text-xs leading-relaxed text-slate-600">{text}</p>
-          <button
-            type="button"
-            onClick={goToCase}
-            className="min-h-10 w-full rounded-full bg-sky-600 px-4 text-xs font-semibold text-white transition-colors hover:bg-sky-700"
-          >
-            Перейти к карточке
-          </button>
-        </div>
-      </div>
-    </div>
+      {children}
+    </button>
   )
 }

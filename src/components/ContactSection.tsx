@@ -84,8 +84,10 @@ export default function ContactSection() {
         {/* Contact cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
           {/* Phone */}
-          <div
-            className="contact-card card-hover glass rounded-2xl p-6 sm:p-8 text-center border border-white/70 space-y-4 group min-h-[180px] flex flex-col justify-center"
+          <a
+            href="tel:+380970534933"
+            className="contact-card card-hover glass rounded-2xl p-6 sm:p-8 text-center border border-white/70 space-y-4 group cursor-pointer min-h-[180px] flex flex-col justify-center"
+            aria-label="Позвонить по номеру +38 097 053 49 33"
           >
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-200 to-sky-100 flex items-center justify-center mx-auto shadow-sm group-hover:scale-110 transition-transform">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3D94C0" strokeWidth="2">
@@ -94,13 +96,13 @@ export default function ContactSection() {
             </div>
             <div>
               <div className="text-xs text-slate-500 font-sans uppercase tracking-wider mb-1">Телефон</div>
-              <div className="font-semibold text-slate-700 font-sans text-lg">+38 (0XX) XXX-XX-XX</div>
+              <div className="font-semibold text-slate-700 font-sans text-lg">+38 (097) 053-49-33</div>
             </div>
-          </div>
+          </a>
 
           {/* Email */}
           <a
-            href="mailto:margaretbagrij@gmail.com"
+            href="mailto:nat13malay@gmail.com"
             className="contact-card card-hover glass rounded-2xl p-6 sm:p-8 text-center border border-white/70 space-y-4 group cursor-pointer min-h-[180px] flex flex-col justify-center"
           >
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sage-200 to-sage-100 flex items-center justify-center mx-auto shadow-sm group-hover:scale-110 transition-transform">
@@ -111,7 +113,7 @@ export default function ContactSection() {
             </div>
             <div>
               <div className="text-xs text-slate-500 font-sans uppercase tracking-wider mb-1">Email</div>
-              <div className="font-semibold text-slate-700 font-sans break-all">malay.natalya@gmail.com</div>
+              <div className="font-semibold text-slate-700 font-sans break-all">nat13malay@gmail.com</div>
             </div>
           </a>
 
@@ -125,7 +127,7 @@ export default function ContactSection() {
             </div>
             <div>
               <div className="text-xs text-slate-500 font-sans uppercase tracking-wider mb-1">Приём</div>
-              <div className="font-semibold text-slate-700 font-sans">По предварительной записи</div>
+              <div className="font-semibold text-slate-700 font-sans">Одесса <br/> Белгород-Днепровский <br/> Выезд в другие города обсуждается</div>
             </div>
           </div>
         </div>
@@ -136,7 +138,7 @@ export default function ContactSection() {
           <div className="flex justify-center gap-5">
             {/* Instagram */}
             <a
-              href="https://instagram.com/"
+              href="https://www.instagram.com/nat1304_massage?igsh=aTdkdXNmNHg0dHA2"
               target="_blank"
               rel="noopener noreferrer"
               className="social-icon group rounded-2xl cursor-pointer"
@@ -161,7 +163,7 @@ export default function ContactSection() {
 
             {/* Telegram */}
             <a
-              href="https://t.me/"
+              href="https://t.me/NatMalay"
               target="_blank"
               rel="noopener noreferrer"
               className="social-icon group rounded-2xl cursor-pointer"
@@ -178,7 +180,7 @@ export default function ContactSection() {
 
             {/* WhatsApp */}
             <a
-              href="https://wa.me/"
+              href="https://wa.me/380970534933"
               target="_blank"
               rel="noopener noreferrer"
               className="social-icon group rounded-2xl cursor-pointer"
