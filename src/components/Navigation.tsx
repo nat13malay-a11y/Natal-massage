@@ -1,22 +1,62 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useI18n, type Lang } from '@/i18n'
 
-const navLinks = [
-  { href: '#about',   label: 'Обо мне' },
-  { href: '#scene',   label: 'Методика' },
-  { href: '#results', label: 'Результаты' },
-  { href: '#contact', label: 'Контакты' },
-]
+const labels: Record<Lang, {
+  nav: Array<{ href: string; label: string }>
+  mobile: Array<{ href: string; label: string; Icon: typeof HomeIcon }>
+  brand: string
+  cta: string
+  top: string
+  ariaMobile: string
+  switchTo: string
+}> = {
+  uk: {
+    nav: [
+      { href: '#about', label: 'Про мене' },
+      { href: '#scene', label: 'Методика' },
+      { href: '#results', label: 'Результати' },
+      { href: '#contact', label: 'Контакти' },
+    ],
+    mobile: [
+      { href: '#hero', label: 'Головна', Icon: HomeIcon },
+      { href: '#scene', label: 'Методика', Icon: MethodIcon },
+      { href: '#results', label: 'Кейси', Icon: ResultsIcon },
+      { href: '#contact', label: 'Запис', Icon: ContactIcon },
+    ],
+    brand: 'Малай Н.Б.',
+    cta: 'Записатися',
+    top: 'Повернутися на початок сторінки',
+    ariaMobile: 'Основна мобільна навігація',
+    switchTo: 'Переключити на російську',
+  },
+  ru: {
+    nav: [
+      { href: '#about', label: 'Обо мне' },
+      { href: '#scene', label: 'Методика' },
+      { href: '#results', label: 'Результаты' },
+      { href: '#contact', label: 'Контакты' },
+    ],
+    mobile: [
+      { href: '#hero', label: 'Главная', Icon: HomeIcon },
+      { href: '#scene', label: 'Методика', Icon: MethodIcon },
+      { href: '#results', label: 'Кейсы', Icon: ResultsIcon },
+      { href: '#contact', label: 'Запись', Icon: ContactIcon },
+    ],
+    brand: 'Малай Н.Б.',
+    cta: 'Записаться',
+    top: 'Вернуться к началу страницы',
+    ariaMobile: 'Основная мобильная навигация',
+    switchTo: 'Переключить на украинский',
+  },
+}
 
-const mobileLinks = [
-  { href: '#hero',    label: 'Главная',    Icon: HomeIcon },
-  { href: '#scene',   label: 'Методика',   Icon: MethodIcon },
-  { href: '#results', label: 'Кейсы',      Icon: ResultsIcon },
-  { href: '#contact', label: 'Запись',     Icon: ContactIcon },
-]
+const navHrefs = ['#hero', '#scene', '#results', '#contact']
 
 export default function Navigation() {
+  const { lang, toggleLang } = useI18n()
+  const t = labels[lang]
   const [scrolled, setScrolled] = useState(false)
   const [activeHref, setActiveHref] = useState('#hero')
   const [pillStyle, setPillStyle] = useState<CSSProperties>({ opacity: 0 })
@@ -43,9 +83,9 @@ export default function Navigation() {
   useEffect(() => {
     const updateActiveFromScroll = () => {
       const anchorY = window.scrollY + window.innerHeight * 0.46
-      let current = mobileLinks[0].href
+      let current = navHrefs[0]
 
-      mobileLinks.forEach(({ href }) => {
+      navHrefs.forEach((href) => {
         const section = document.querySelector<HTMLElement>(href)
         if (section && section.offsetTop <= anchorY) current = href
       })
@@ -94,7 +134,7 @@ export default function Navigation() {
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             className="flex items-center gap-3 group cursor-pointer rounded-full"
-            aria-label="Вернуться к началу страницы"
+            aria-label={t.top}
           >
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-300 to-sage-300 flex items-center justify-center shadow-md">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
@@ -103,12 +143,12 @@ export default function Navigation() {
               </svg>
             </div>
             <span className="heading-section text-lg text-slate-700 group-hover:text-sky-500 transition-colors">
-              Малай Н.Б.
+              {t.brand}
             </span>
           </button>
 
           <ul className="flex items-center gap-8">
-            {navLinks.map(({ href, label }) => (
+            {t.nav.map(({ href, label }) => (
               <li key={href}>
                 <button
                   onClick={() => scrollTo(href)}
@@ -124,15 +164,23 @@ export default function Navigation() {
             href="#contact"
             className="inline-flex btn-primary text-sm py-2.5 px-6 min-h-[42px]"
           >
-            Записаться
+            {t.cta}
           </a>
+          <button
+            type="button"
+            onClick={toggleLang}
+            className="min-h-[42px] rounded-full border border-sky-200 bg-white/70 px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-sky-50 hover:text-sky-700"
+            aria-label={t.switchTo}
+          >
+            {lang === 'uk' ? 'RU' : 'UA'}
+          </button>
         </div>
       </nav>
 
       <nav
         className="fixed inset-x-0 bottom-3 z-50 px-3 pointer-events-none md:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-        aria-label="Основная мобильная навигация"
+        aria-label={t.ariaMobile}
       >
         <div className="pointer-events-auto relative mx-auto flex w-full max-w-[390px] items-center rounded-full border border-white/55 bg-white/30 p-1.5 shadow-[0_22px_55px_rgba(15,23,42,0.20),inset_0_2px_3px_rgba(255,255,255,0.78),inset_0_-2px_5px_rgba(255,255,255,0.24)] backdrop-blur-[32px] saturate-[1.9]">
           <div className="pointer-events-none absolute inset-x-1 top-1 h-[46%] rounded-t-full bg-gradient-to-b from-white/75 to-white/0" />
@@ -144,7 +192,7 @@ export default function Navigation() {
               aria-hidden="true"
             />
 
-            {mobileLinks.map(({ href, label, Icon }) => (
+            {t.mobile.map(({ href, label, Icon }) => (
               <button
                 key={href}
                 ref={(node) => {
@@ -160,6 +208,14 @@ export default function Navigation() {
                 <span className="max-w-full truncate">{label}</span>
               </button>
             ))}
+            <button
+              type="button"
+              onClick={toggleLang}
+              className="relative z-10 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-sky-100/70 bg-white/52 font-sans text-xs font-bold text-sky-700 shadow-[inset_0_1px_1px_rgba(255,255,255,0.86)] transition-colors duration-300 hover:bg-sky-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
+              aria-label={t.switchTo}
+            >
+              {lang === 'uk' ? 'RU' : 'UA'}
+            </button>
           </div>
         </div>
       </nav>

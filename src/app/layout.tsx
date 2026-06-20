@@ -15,20 +15,20 @@ const interSans = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Малай Наталья Борисовна — Нейрометодика и Массаж',
+  title: 'Малай Наталія Борисівна — Нейрометодика і масаж',
   description:
-    'Профессиональная нейрометодика, массаж, реабилитация и лечение сложных заболеваний. Индивидуальный подход к каждому пациенту.',
-  keywords: 'нейрометодика, массаж, реабилитация, лечение, Малай Наталья',
+    'Професійна нейрометодика, масаж, реабілітація і робота зі складними станами. Індивідуальний підхід до кожного.',
+  keywords: 'нейрометодика, масаж, реабілітація, лікування, Малай Наталія',
   openGraph: {
-    title: 'Малай Наталья Борисовна — Нейрометодика и Массаж',
-    description: 'Профессиональная нейрометодика, массаж, реабилитация',
+    title: 'Малай Наталія Борисівна — Нейрометодика і масаж',
+    description: 'Професійна нейрометодика, масаж, реабілітація',
     type: 'website',
   },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className={`${inter.variable} ${interSans.variable}`}>
+    <html lang="uk" className={`${inter.variable} ${interSans.variable}`}>
       <body className="antialiased">{children}</body>
     </html>
   )

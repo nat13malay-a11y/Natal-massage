@@ -3,8 +3,63 @@
 import { useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { gsap } from 'gsap'
+import { useI18n, type Lang } from '@/i18n'
+
+const text: Record<Lang, {
+  tag: string
+  words: string[]
+  subtitle: string
+  cta: string
+  results: string
+  stats: Array<{ value: string; label: string }>
+  alt: string
+  certifiedSmall: string
+  certifiedMain: string
+  uniqueSmall: string
+  uniqueMain: string
+  scroll: string
+}> = {
+  uk: {
+    tag: 'Нейрометодика · Масаж · Реабілітація',
+    words: ['Малай', 'Наталія', 'Борисівна'],
+    subtitle: 'Понад 15 років я допомагаю людям відновлювати здоров’я через унікальні методики нейрореабілітації та професійного масажу. Разом ми знайдемо шлях до вашого відновлення.',
+    cta: 'Записатися на консультацію',
+    results: 'Історії успіху',
+    stats: [
+      { value: '15+', label: 'років досвіду' },
+      { value: '500+', label: 'пацієнтів' },
+      { value: '98%', label: 'результат' },
+    ],
+    alt: 'Малай Наталія Борисівна — нейрометодика',
+    certifiedSmall: 'Сертифікований спеціаліст',
+    certifiedMain: 'Нейрометодика',
+    uniqueSmall: 'Унікальна',
+    uniqueMain: 'методика',
+    scroll: 'Прокрутити',
+  },
+  ru: {
+    tag: 'Нейрометодика · Массаж · Реабилитация',
+    words: ['Малай', 'Наталья', 'Борисовна'],
+    subtitle: 'Более 15 лет я помогаю людям восстанавливать здоровье через уникальные методики нейрореабилитации и профессионального массажа. Вместе мы найдём путь к вашему выздоровлению.',
+    cta: 'Записаться на консультацию',
+    results: 'Истории успеха',
+    stats: [
+      { value: '15+', label: 'лет опыта' },
+      { value: '500+', label: 'пациентов' },
+      { value: '98%', label: 'результат' },
+    ],
+    alt: 'Малай Наталья Борисовна — нейрометодика',
+    certifiedSmall: 'Сертифицированный специалист',
+    certifiedMain: 'Нейрометодика',
+    uniqueSmall: 'Уникальная',
+    uniqueMain: 'методика',
+    scroll: 'Прокрутить',
+  },
+}
 
 export default function HeroSection() {
+  const { lang } = useI18n()
+  const t = text[lang]
   const containerRef = useRef<HTMLDivElement>(null)
   const textRef      = useRef<HTMLDivElement>(null)
   const imageRef     = useRef<HTMLDivElement>(null)
@@ -79,8 +134,6 @@ export default function HeroSection() {
     return () => ctx.revert()
   }, [])
 
-  const words = ['Малай', 'Наталья', 'Борисовна']
-
   return (
     <section
       ref={containerRef}
@@ -146,14 +199,14 @@ export default function HeroSection() {
           <div className="hero-tag inline-flex max-w-full items-center gap-2 glass px-4 py-2 rounded-full shadow-sm">
             <span className="w-2 h-2 rounded-full bg-sage-400 animate-pulse-slow" />
             <span className="text-sm font-medium text-slate-700">
-              Нейрометодика · Массаж · Реабилитация
+              {t.tag}
             </span>
           </div>
 
           {/* Name */}
           <div className="overflow-hidden">
             <h1 className="heading-display text-slate-800" style={{ fontSize: 'clamp(2.35rem, 12vw, 3.8rem)' }}>
-              {words.map((word, i) => (
+              {t.words.map((word, i) => (
                 <span key={i} className="hero-name-word inline-block mr-3" style={{ display: 'inline-block' }}>
                   {word}
                 </span>
@@ -163,27 +216,22 @@ export default function HeroSection() {
 
           {/* Subtitle */}
           <p className="hero-subtitle text-slate-600 text-base sm:text-lg leading-relaxed max-w-lg font-sans">
-            Более 15 лет я помогаю людям восстанавливать здоровье через уникальные методики нейрореабилитации
-            и профессионального массажа. Вместе мы найдём путь к вашему выздоровлению.
+            {t.subtitle}
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4 pt-1 sm:pt-2">
             <a href="#contact" className="hero-btn btn-primary">
-              Записаться на консультацию
+              {t.cta}
             </a>
             <a href="#results" className="hero-btn btn-outline">
-              Истории успеха
+              {t.results}
             </a>
           </div>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-2 sm:gap-6 pt-4 border-t border-nude-200">
-            {[
-              { value: '15+', label: 'лет опыта' },
-              { value: '500+', label: 'пациентов' },
-              { value: '98%', label: 'результат' },
-            ].map(({ value, label }) => (
+            {t.stats.map(({ value, label }) => (
               <div key={label} className="hero-stat text-center">
                 <div className="stat-number">{value}</div>
                 <div className="text-[0.68rem] sm:text-xs text-slate-600 font-sans mt-1 uppercase">{label}</div>
@@ -220,7 +268,7 @@ export default function HeroSection() {
           >
             <Image
               src="/assets/natalya-professor.jpg"
-              alt="Малай Наталья Борисовна — нейрометодика"
+              alt={t.alt}
               fill
               style={{ objectFit: 'cover', objectPosition: 'center top' }}
               priority
@@ -238,8 +286,8 @@ export default function HeroSection() {
                 </svg>
               </div>
               <div>
-                <div className="text-xs text-slate-600 font-sans">Сертифицированный специалист</div>
-                <div className="text-sm font-semibold text-slate-700 font-sans">Нейрометодика</div>
+                <div className="text-xs text-slate-600 font-sans">{t.certifiedSmall}</div>
+                <div className="text-sm font-semibold text-slate-700 font-sans">{t.certifiedMain}</div>
               </div>
             </div>
           </div>
@@ -254,8 +302,8 @@ export default function HeroSection() {
                 </svg>
               </span>
               <div>
-                <div className="text-xs text-slate-600 font-sans">Уникальная</div>
-                <div className="text-sm font-semibold text-slate-700 font-sans">методика</div>
+                <div className="text-xs text-slate-600 font-sans">{t.uniqueSmall}</div>
+                <div className="text-sm font-semibold text-slate-700 font-sans">{t.uniqueMain}</div>
               </div>
             </div>
           </div>
@@ -264,7 +312,7 @@ export default function HeroSection() {
 
       {/* Scroll indicator */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 hidden lg:flex flex-col items-center gap-2 opacity-60">
-        <span className="text-xs text-slate-500 font-sans tracking-widest uppercase">Прокрутить</span>
+        <span className="text-xs text-slate-500 font-sans tracking-widest uppercase">{t.scroll}</span>
         <div className="w-5 h-8 rounded-full border-2 border-slate-300 flex justify-center pt-1.5">
           <div
             className="w-1 h-1.5 rounded-full bg-slate-400"

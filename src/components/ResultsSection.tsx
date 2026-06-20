@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useI18n, type Lang } from '@/i18n'
 
 const cases = [
   {
@@ -50,7 +51,88 @@ const cases = [
   },
 ]
 
+const copy: Record<Lang, {
+  eyebrow: string
+  title: string
+  intro: string
+  stats: Array<{ value: string; label: string }>
+  cases: Array<{
+    tag: string
+    heading: string
+    patient: string
+    text: string
+    metrics: Array<{ value: string; label: string }>
+  }>
+  quote: string
+  more: string
+  cta: string
+}> = {
+  uk: {
+    eyebrow: 'Реальні результати',
+    title: 'Історії успіху',
+    intro: 'Кожен пацієнт — унікальна історія. Ось лише кілька випадків, де нейрометодика дала результат, якого не очікували лікарі.',
+    stats: [
+      { value: '500+', label: 'Пацієнтів' },
+      { value: '15+', label: 'Років досвіду' },
+      { value: '98%', label: 'Позитивних результатів' },
+      { value: '30+', label: 'Видів патологій' },
+    ],
+    cases: [
+      {
+        tag: 'ДЦП',
+        heading: 'Повернення руху',
+        patient: 'Дитина, 6 років',
+        text: 'Хлопчик із діагнозом ДЦП не міг самостійно ходити й контролювати рухи рук. Після курсу нейрометодики вдалося відновити рухову функцію: дитина почала ходити без підтримки та виконувати точні рухи руками.',
+        metrics: [
+          { value: '8', label: 'місяців роботи' },
+          { value: '100%', label: 'ходить сам' },
+        ],
+      },
+      {
+        tag: 'Вроджена косоокість',
+        heading: 'Перемога над косоокістю',
+        patient: 'Дівчинка, 9 років',
+        text: 'Дівчинка з вираженою косоокістю: одне око відхилялося на 30°. Хірургічне лікування не дало результату. Завдяки нейрометодиці вдалося нормалізувати м’язовий тонус ока — косоокість зникла без операції.',
+        metrics: [
+          { value: '4', label: 'місяці курсу' },
+          { value: '0°', label: 'відхилення' },
+        ],
+      },
+      {
+        tag: 'Хвороба Паркінсона',
+        heading: 'Робота з хворобою Паркінсона',
+        patient: 'Індивідуальна програма',
+        text: 'При хворобі Паркінсона робота будується через відновлення зв’язку тіла й нервової системи: пальпація, м’який вплив, зниження м’язового напруження та поступове повернення контролю рухів.',
+        metrics: [
+          { value: '1:1', label: 'підхід' },
+          { value: '15+', label: 'років практики' },
+        ],
+      },
+    ],
+    quote: '«Методика Наталії Борисівни дала нам те, про що ми боялися навіть мріяти»',
+    more: 'Це лише мала частина випадків. Нейрометодика допомагає при більш ніж 30 видах розладів — від хвороби Паркінсона до посттравматичних станів.',
+    cta: 'Обговорити ваш випадок',
+  },
+  ru: {
+    eyebrow: 'Реальные результаты',
+    title: 'Истории успеха',
+    intro: 'Каждый пациент — уникальная история. Вот лишь несколько случаев, где нейрометодика дала результат, которого не ожидали врачи.',
+    stats: [
+      { value: '500+', label: 'Пациентов' },
+      { value: '15+', label: 'Лет опыта' },
+      { value: '98%', label: 'Положительных результатов' },
+      { value: '30+', label: 'Видов патологий' },
+    ],
+    cases: cases.map(({ tag, heading, patient, text, metrics }) => ({ tag, heading, patient, text, metrics })),
+    quote: '«Методика Натальи Борисовны дала нам то, о чём мы боялись даже мечтать»',
+    more: 'Это лишь малая часть случаев. Нейрометодика помогает при более чем 30 видах расстройств — от болезни Паркинсона до посттравматических состояний.',
+    cta: 'Обсудить ваш случай',
+  },
+}
+
 export default function ResultsSection() {
+  const { lang } = useI18n()
+  const t = copy[lang]
   const sectionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -138,26 +220,20 @@ export default function ResultsSection() {
         {/* Header */}
         <div className="text-center space-y-4">
           <p className="results-heading text-sm font-medium text-sky-500 uppercase tracking-widest font-sans">
-            Реальные результаты
+            {t.eyebrow}
           </p>
           <h2 className="results-heading heading-section text-slate-800"
               style={{ fontSize: 'clamp(1.9rem, 9vw, 3rem)' }}>
-            Истории успеха
+            {t.title}
           </h2>
           <p className="results-heading text-slate-600 max-w-xl mx-auto font-sans leading-relaxed">
-            Каждый пациент — уникальная история. Вот лишь несколько случаев,
-            где нейрометодика дала результат, которого не ожидали врачи.
+            {t.intro}
           </p>
         </div>
 
         {/* Summary stats bar */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 py-7 sm:py-10 px-4 sm:px-8 rounded-2xl gradient-section border border-nude-200">
-          {[
-            { value: '500+', label: 'Пациентов' },
-            { value: '15+',  label: 'Лет опыта' },
-            { value: '98%',  label: 'Положительных результатов' },
-            { value: '30+',  label: 'Видов патологий' },
-          ].map(({ value, label }) => (
+          {t.stats.map(({ value, label }) => (
             <div key={label} className="results-stat text-center">
               <div className="stat-number">{value}</div>
               <div className="text-[0.68rem] sm:text-xs text-slate-600 uppercase font-sans mt-2">{label}</div>
@@ -167,7 +243,9 @@ export default function ResultsSection() {
 
         {/* Case cards */}
         <div className="space-y-12">
-          {cases.map((c, i) => (
+          {cases.map((c, i) => {
+            const translatedCase = t.cases[i]
+            return (
             <div
               key={c.id}
               id={c.id}
@@ -179,7 +257,7 @@ export default function ResultsSection() {
               <div className="case-photo relative md:w-2/5 min-h-[230px] sm:min-h-[280px]">
                 <Image
                   src={c.image}
-                  alt={c.heading}
+                  alt={translatedCase.heading}
                   fill
                   unoptimized={c.image.endsWith('.gif')}
                   style={{ objectFit: 'cover', objectPosition: 'center' }}
@@ -189,7 +267,7 @@ export default function ResultsSection() {
                 {/* Tag */}
                 <div className="absolute top-5 left-5">
                   <span className={`${c.tagColor} text-xs font-bold px-3 py-1.5 rounded-full font-sans`}>
-                    {c.tag}
+                    {translatedCase.tag}
                   </span>
                 </div>
               </div>
@@ -197,15 +275,15 @@ export default function ResultsSection() {
               {/* Content */}
               <div className="md:w-3/5 p-5 sm:p-8 lg:p-12 flex flex-col justify-center space-y-5 sm:space-y-6 bg-white">
                 <div>
-                  <p className="text-xs text-slate-500 font-sans uppercase mb-2">{c.patient}</p>
-                  <h3 className="heading-section text-slate-800 text-2xl lg:text-3xl">{c.heading}</h3>
+                  <p className="text-xs text-slate-500 font-sans uppercase mb-2">{translatedCase.patient}</p>
+                  <h3 className="heading-section text-slate-800 text-2xl lg:text-3xl">{translatedCase.heading}</h3>
                 </div>
 
-                <p className="text-slate-600 leading-relaxed font-sans">{c.text}</p>
+                <p className="text-slate-600 leading-relaxed font-sans">{translatedCase.text}</p>
 
                 {/* Metrics */}
                 <div className="grid grid-cols-2 gap-5 sm:flex sm:gap-8 pt-2 border-t border-slate-100">
-                  {c.metrics.map(({ value, label }) => (
+                  {translatedCase.metrics.map(({ value, label }) => (
                     <div key={label}>
                       <div className="stat-number" style={{ fontSize: '2rem' }}>{value}</div>
                       <div className="text-[0.68rem] sm:text-xs text-slate-600 font-sans uppercase mt-1">{label}</div>
@@ -220,22 +298,21 @@ export default function ResultsSection() {
                     <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z" fill="currentColor"/>
                   </svg>
                   <p className="text-slate-600 text-sm italic font-sans leading-relaxed">
-                    «Методика Натальи Борисовны дала нам то, о чём мы боялись даже мечтать»
+                    {t.quote}
                   </p>
                 </div>
               </div>
             </div>
-          ))}
+          )})}
         </div>
 
         {/* Additional cases mention */}
         <div className="text-center space-y-6 py-10">
           <p className="text-slate-600 font-sans max-w-lg mx-auto">
-            Это лишь малая часть случаев. Нейрометодика помогает при более чем 30 видах расстройств —
-            от болезни Паркинсона до посттравматических состояний.
+            {t.more}
           </p>
           <a href="#contact" className="btn-primary inline-block">
-            Обсудить ваш случай
+            {t.cta}
           </a>
         </div>
 

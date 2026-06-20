@@ -1,10 +1,57 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useI18n, type Lang } from '@/i18n'
+
+const copy: Record<Lang, {
+  eyebrow: string
+  title: string
+  intro: string
+  phoneLabel: string
+  phoneAria: string
+  emailLabel: string
+  visitLabel: string
+  visitText: ReactNode
+  social: string
+  footerName: string
+  rights: string
+  made: string
+}> = {
+  uk: {
+    eyebrow: 'Зв’яжіться зі мною',
+    title: 'Почніть шлях до здоров’я',
+    intro: 'Запишіться на консультацію. Разом ми визначимо, як нейрометодика може допомогти саме вам.',
+    phoneLabel: 'Телефон',
+    phoneAria: 'Подзвонити за номером +38 097 053 49 33',
+    emailLabel: 'Email',
+    visitLabel: 'Прийом',
+    visitText: <>Одеса <br/> Білгород-Дністровський <br/> Виїзд в інші міста обговорюється</>,
+    social: 'Стежте за результатами в соціальних мережах',
+    footerName: 'Малай Наталія Борисівна',
+    rights: '© 2026 · Нейрометодика і масаж · Усі права захищені',
+    made: 'Створено для здоров’я',
+  },
+  ru: {
+    eyebrow: 'Свяжитесь со мной',
+    title: 'Начните путь к здоровью',
+    intro: 'Запишитесь на консультацию. Вместе мы определим, как нейрометодика может помочь именно вам.',
+    phoneLabel: 'Телефон',
+    phoneAria: 'Позвонить по номеру +38 097 053 49 33',
+    emailLabel: 'Email',
+    visitLabel: 'Приём',
+    visitText: <>Одесса <br/> Белгород-Днепровский <br/> Выезд в другие города обсуждается</>,
+    social: 'Следите за результатами в социальных сетях',
+    footerName: 'Малай Наталья Борисовна',
+    rights: '© 2026 · Нейрометодика и массаж · Все права защищены',
+    made: 'Сделано для здоровья',
+  },
+}
 
 export default function ContactSection() {
+  const { lang } = useI18n()
+  const t = copy[lang]
   const sectionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -70,14 +117,14 @@ export default function ContactSection() {
         {/* Header */}
         <div className="text-center space-y-4">
           <p className="contact-heading text-sm font-medium text-sky-500 uppercase tracking-widest font-sans">
-            Свяжитесь со мной
+            {t.eyebrow}
           </p>
           <h2 className="contact-heading heading-section text-slate-800"
               style={{ fontSize: 'clamp(1.9rem, 9vw, 3rem)' }}>
-            Начните путь к здоровью
+            {t.title}
           </h2>
           <p className="contact-heading text-slate-600 max-w-lg mx-auto font-sans leading-relaxed">
-            Запишитесь на консультацию. Вместе мы определим, как нейрометодика может помочь именно вам.
+            {t.intro}
           </p>
         </div>
 
@@ -87,7 +134,7 @@ export default function ContactSection() {
           <a
             href="tel:+380970534933"
             className="contact-card card-hover glass rounded-2xl p-6 sm:p-8 text-center border border-white/70 space-y-4 group cursor-pointer min-h-[180px] flex flex-col justify-center"
-            aria-label="Позвонить по номеру +38 097 053 49 33"
+            aria-label={t.phoneAria}
           >
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-200 to-sky-100 flex items-center justify-center mx-auto shadow-sm group-hover:scale-110 transition-transform">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3D94C0" strokeWidth="2">
@@ -95,7 +142,7 @@ export default function ContactSection() {
               </svg>
             </div>
             <div>
-              <div className="text-xs text-slate-500 font-sans uppercase tracking-wider mb-1">Телефон</div>
+              <div className="text-xs text-slate-500 font-sans uppercase tracking-wider mb-1">{t.phoneLabel}</div>
               <div className="font-semibold text-slate-700 font-sans text-lg">+38 (097) 053-49-33</div>
             </div>
           </a>
@@ -112,7 +159,7 @@ export default function ContactSection() {
               </svg>
             </div>
             <div>
-              <div className="text-xs text-slate-500 font-sans uppercase tracking-wider mb-1">Email</div>
+              <div className="text-xs text-slate-500 font-sans uppercase tracking-wider mb-1">{t.emailLabel}</div>
               <div className="font-semibold text-slate-700 font-sans break-all">nat13malay@gmail.com</div>
             </div>
           </a>
@@ -126,15 +173,15 @@ export default function ContactSection() {
               </svg>
             </div>
             <div>
-              <div className="text-xs text-slate-500 font-sans uppercase tracking-wider mb-1">Приём</div>
-              <div className="font-semibold text-slate-700 font-sans">Одесса <br/> Белгород-Днепровский <br/> Выезд в другие города обсуждается</div>
+              <div className="text-xs text-slate-500 font-sans uppercase tracking-wider mb-1">{t.visitLabel}</div>
+              <div className="font-semibold text-slate-700 font-sans">{t.visitText}</div>
             </div>
           </div>
         </div>
 
         {/* Social links */}
         <div className="text-center space-y-6">
-          <p className="text-slate-600 font-sans text-sm">Следите за результатами в социальных сетях</p>
+          <p className="text-slate-600 font-sans text-sm">{t.social}</p>
           <div className="flex justify-center gap-5">
             {/* Instagram */}
             <a
@@ -208,15 +255,15 @@ export default function ContactSection() {
                 <path d="M8 12h8M12 8v8"/>
               </svg>
             </div>
-            <span className="font-semibold text-slate-700 font-sans text-sm">Малай Наталья Борисовна</span>
+            <span className="font-semibold text-slate-700 font-sans text-sm">{t.footerName}</span>
           </div>
 
           <p className="text-slate-500 font-sans text-xs text-center">
-            © {new Date().getFullYear()} · Нейрометодика и массаж · Все права защищены
+            {t.rights.replace('2026', String(new Date().getFullYear()))}
           </p>
 
           <p className="text-slate-500 font-sans text-xs">
-            Сделано для здоровья
+            {t.made}
           </p>
         </div>
       </div>

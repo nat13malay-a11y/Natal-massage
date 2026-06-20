@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import Image from 'next/image'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useI18n, type Lang } from '@/i18n'
 
 const services = [
   {
@@ -57,7 +58,94 @@ const services = [
   },
 ]
 
+const copy: Record<Lang, {
+  eyebrow: string
+  titleA: string
+  titleB: string
+  paragraphs: string[]
+  parkinson: string
+  strabismus: string
+  cerebralPalsy: string
+  massageAlt: string
+  years: string
+  certAlt: string
+  certTitle: string
+  certText: string
+  servicesEyebrow: string
+  servicesTitle: string
+  services: Array<{ title: string; desc: string; bullets: string[] }>
+}> = {
+  uk: {
+    eyebrow: 'Про мене',
+    titleA: 'Здоров’я — це',
+    titleB: 'можливо повернути',
+    paragraphs: [
+      'Звати мене Наталія Борисівна Малай. Я нейрореабілітолог. Цей вибір був зроблений завдяки здібностям, які проявилися ще в дитинстві.',
+      'Через відсутність мовлення до 15 років у мене розвинулася здатність тонко відчувати природу і стан людини. Перший масаж я зробила у 7 років, і він допоміг моїй бабусі. Зі своїм мовленням я працювала самостійно: співала, читала, тренувалася щодня. Допомагаючи собі й родичам, я на практиці вчилася розуміти, як працює природа.',
+      'Протягом багатьох років із різними захворюваннями я справлялася без таблеток. У 2007 році познайомилася з кардіологом, який допоміг мені заснувати методику пальпації. Спілкування й навчання у кваліфікованих спеціалістів, професорів та академіків допомогли сформулювати авторську методику.',
+      'Завдяки знанням, досвіду і практиці я стала знаходити не просто причину хвороби, а її походження. І тепер кидаю виклик традиційній медицині.',
+      'Знаю, що в природі немає хвороби, з якою неможливо впоратися.',
+      'Працюю за спеціальними програмами: дефект мовлення, аутизм у дітей, ДЦП та інші складні стани. В основі роботи — індивідуальний підхід до кожного.',
+      'Думаю, що кожна людина має відчувати свою природу і бути на своєму місці.',
+    ],
+    parkinson: 'Хвороба Паркінсона',
+    strabismus: 'Вроджена косоокість',
+    cerebralPalsy: 'Лікування ДЦП',
+    massageAlt: 'Наталія за роботою',
+    years: 'років досвіду',
+    certAlt: 'Сертифікат спеціаліста',
+    certTitle: 'Сертифікований спеціаліст з реабілітації.',
+    certText: 'Нейрореабілітолог, авторська нейро методика.',
+    servicesEyebrow: 'Послуги',
+    servicesTitle: 'Напрями роботи',
+    services: [
+      {
+        title: 'Нейрометодика',
+        desc: 'Унікальна система впливу на нервову систему для відновлення рухових функцій, роботи з неврологічними розладами та реабілітації після травм.',
+        bullets: ['Реабілітація після інсульту', 'Лікування ДЦП', 'Відновлення нервових зв’язків'],
+      },
+      {
+        title: 'Лікувальний масаж',
+        desc: 'Професійний лікувальний і релаксуючий масаж із застосуванням авторських методик. Зняття больового синдрому, покращення кровообігу, омолодження.',
+        bullets: ['Антицелюлітний масаж', 'Масаж обличчя', 'Реабілітаційний масаж'],
+      },
+      {
+        title: 'Реабілітація',
+        desc: 'Комплексні програми реабілітації при складних станах: неврологічних розладах, опорно-рухових порушеннях і посттравматичних наслідках.',
+        bullets: ['Синдром Туретта', 'Хвороба Паркінсона', 'Постінсультна реабілітація'],
+      },
+    ],
+  },
+  ru: {
+    eyebrow: 'Обо мне',
+    titleA: 'Здоровье — это',
+    titleB: 'возможно вернуть',
+    paragraphs: [
+      'Зовут меня Наталья Борисовна Малай. Я нейрореабилитолог. Этот выбор был сделан благодаря способностям, которые проявились ещё в детстве.',
+      'Из-за отсутствия речи до 15 лет у меня развилась способность тонко чувствовать природу и состояние человека. Первый массаж я сделала в 7 лет, и он помог моей бабушке. Со своей речью я работала самостоятельно: пела, читала, тренировалась каждый день. Помогая себе и родственникам, я на практике училась понимать, как работает природа.',
+      'На протяжении многих лет с разными заболеваниями я справлялась без таблеток. В 2007 году познакомилась с кардиологом, который помог мне основать методику пальпации. Общение и обучение у квалифицированных специалистов, профессоров и академиков помогли сформулировать авторскую методику.',
+      'Благодаря знаниям, опыту и практике я стала находить не просто причину болезни, а её происхождение. И теперь бросаю вызов традиционной медицине.',
+      'Знаю, что в природе нет болезни, с которой нельзя не справиться.',
+      'Работаю по специальным программам: дефект речи, аутизм у детей, ДЦП и другие сложные состояния. В основе работы — индивидуальный подход к каждому.',
+      'Думаю, что каждый человек должен чувствовать свою природу и быть на своём месте.',
+    ],
+    parkinson: 'Болезнь Паркинсона',
+    strabismus: 'Врождённое косоглазие',
+    cerebralPalsy: 'Лечение ДЦП',
+    massageAlt: 'Наталья за работой',
+    years: 'лет опыта',
+    certAlt: 'Сертификат специалиста',
+    certTitle: 'Сертифицированный специалист по реабилитации.',
+    certText: 'Нейрореабилитолог, авторская нейро методика.',
+    servicesEyebrow: 'Услуги',
+    servicesTitle: 'Направления работы',
+    services: services.map(({ title, desc, bullets }) => ({ title, desc, bullets })),
+  },
+}
+
 export default function AboutSection() {
+  const { lang } = useI18n()
+  const t = copy[lang]
   const sectionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -140,53 +228,37 @@ export default function AboutSection() {
           <div className="space-y-8">
             <div>
               <p className="about-heading text-sm font-medium text-sky-500 uppercase tracking-widest mb-3 font-sans">
-                Обо мне
+                {t.eyebrow}
               </p>
               <h2 className="about-heading heading-section text-slate-800"
                   style={{ fontSize: 'clamp(1.9rem, 9vw, 3rem)' }}>
-                Здоровье — это<br />
-                <span className="text-sky-600">возможно вернуть</span>
+                {t.titleA}<br />
+                <span className="text-sky-600">{t.titleB}</span>
               </h2>
             </div>
 
             <div className="about-bio space-y-5 text-slate-600 leading-relaxed font-sans text-base sm:text-[1.05rem]">
+              <p>{t.paragraphs[0]}</p>
+              <p>{t.paragraphs[1]}</p>
+              <p>{t.paragraphs[2]}</p>
               <p>
-                Зовут меня <strong className="text-slate-800">Наталья Борисовна Малай</strong>. Я нейрореабилитолог.
-                Этот выбор был сделан благодаря способностям, которые проявились ещё в детстве.
-              </p>
-              <p>
-                Из-за отсутствия речи до 15 лет у меня развилась способность тонко чувствовать природу и состояние
-                человека. Первый массаж я сделала в 7 лет, и он помог моей бабушке. Со своей речью я работала
-                самостоятельно: пела, читала, тренировалась каждый день. Помогая себе и родственникам, я на практике
-                училась понимать, как работает природа.
-              </p>
-              <p>
-                На протяжении многих лет с разными заболеваниями я справлялась без таблеток. В 2007 году познакомилась
-                с кардиологом, который помог мне основать методику пальпации. Общение и обучение у квалифицированных
-                специалистов, профессоров и академиков помогли сформулировать авторскую методику.
-              </p>
-              <p>
-                Благодаря знаниям, опыту и практике я стала находить не просто причину болезни, а её происхождение.
-                И теперь бросаю вызов традиционной медицине.
+                {t.paragraphs[3]}
                 {' '}
-                <CaseTextLink href="#case-parkinsons">Болезнь Паркинсона</CaseTextLink>
+                <CaseTextLink href="#case-parkinsons">{t.parkinson}</CaseTextLink>
               </p>
 
               <p>
-                Знаю, что в природе нет болезни, с которой нельзя не справиться.
+                {t.paragraphs[4]}
                 {' '}
-                <CaseTextLink href="#case-strabismus">Врождённое косоглазие</CaseTextLink>
+                <CaseTextLink href="#case-strabismus">{t.strabismus}</CaseTextLink>
               </p>
 
               <p>
-                Работаю по специальным программам: дефект речи, аутизм у детей, ДЦП и другие сложные состояния.
-                В основе работы — индивидуальный подход к каждому.
+                {t.paragraphs[5]}
                 {' '}
-                <CaseTextLink href="#case-cerebral-palsy">Лечение ДЦП</CaseTextLink>
+                <CaseTextLink href="#case-cerebral-palsy">{t.cerebralPalsy}</CaseTextLink>
               </p>
-              <p>
-                Думаю, что каждый человек должен чувствовать свою природу и быть на своём месте.
-              </p>
+              <p>{t.paragraphs[6]}</p>
             </div>
           </div>
 
@@ -203,7 +275,7 @@ export default function AboutSection() {
                    style={{ height: 'clamp(320px, 64vw, 520px)' }}>
                 <Image
                   src="/assets/massage.jpg"
-                  alt="Наталья за работой"
+                  alt={t.massageAlt}
                   fill
                   style={{ objectFit: 'cover', objectPosition: 'center' }}
                   sizes="(max-width: 768px) 100vw, 50vw"
@@ -216,7 +288,7 @@ export default function AboutSection() {
               <div className="absolute right-3 sm:-right-4 top-5 sm:top-8 glass rounded-2xl p-4 shadow-xl">
                 <div className="text-center">
                   <div className="stat-number" style={{ fontSize: '2rem' }}>15+</div>
-                  <div className="text-xs text-slate-500 font-sans">лет опыта</div>
+                  <div className="text-xs text-slate-500 font-sans">{t.years}</div>
                 </div>
               </div>
             </div>
@@ -227,7 +299,7 @@ export default function AboutSection() {
                 <div className="aspect-[4/3] rounded-xl overflow-hidden shadow-lg bg-white">
                   <Image
                     src="/assets/certificate.jpg"
-                    alt="Сертификат специалиста"
+                    alt={t.certAlt}
                     width={448}
                     height={336}
                     style={{ objectFit: 'cover', width: '100%', height: '100%' }}
@@ -235,10 +307,10 @@ export default function AboutSection() {
                 </div>
                 <div className="space-y-1.5">
                   <div className="font-semibold text-slate-700 font-sans text-sm sm:text-base leading-snug">
-                    Сертифицированный специалист по реабилитации.
+                    {t.certTitle}
                   </div>
                   <div className="text-sm text-slate-500 font-sans leading-snug">
-                    Нейрореабилитолог, авторская нейро методика.
+                    {t.certText}
                   </div>
                 </div>
               </div>
@@ -249,14 +321,16 @@ export default function AboutSection() {
         {/* Services Grid */}
         <div>
           <div className="text-center mb-14">
-            <p className="text-sm font-medium text-sky-500 uppercase tracking-widest mb-3 font-sans">Услуги</p>
+            <p className="text-sm font-medium text-sky-500 uppercase tracking-widest mb-3 font-sans">{t.servicesEyebrow}</p>
             <h2 className="heading-section text-slate-800" style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.6rem)' }}>
-              Направления работы
+              {t.servicesTitle}
             </h2>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-8 items-stretch">
-            {services.map((s) => (
+            {services.map((s, index) => {
+              const service = t.services[index]
+              return (
               <div
                 key={s.title}
                 className={`service-card card-hover rounded-2xl p-6 sm:p-7 lg:p-8 border ${s.border} ${s.bg} space-y-5 w-full min-h-[360px]`}
@@ -266,11 +340,11 @@ export default function AboutSection() {
                   {s.icon}
                 </div>
 
-                <h3 className={`text-xl font-semibold ${s.accent} heading-section`}>{s.title}</h3>
-                <p className="text-slate-600 text-sm leading-relaxed font-sans">{s.desc}</p>
+                <h3 className={`text-xl font-semibold ${s.accent} heading-section`}>{service.title}</h3>
+                <p className="text-slate-600 text-sm leading-relaxed font-sans">{service.desc}</p>
 
                 <ul className="space-y-2">
-                  {s.bullets.map((b) => (
+                  {service.bullets.map((b) => (
                     <li key={b} className="flex items-center gap-2 text-sm text-slate-600 font-sans">
                       <span className={`w-1.5 h-1.5 rounded-full ${s.accent.replace('text', 'bg')} flex-shrink-0`} />
                       {b}
@@ -278,7 +352,7 @@ export default function AboutSection() {
                   ))}
                 </ul>
               </div>
-            ))}
+            )})}
           </div>
         </div>
 
@@ -287,7 +361,7 @@ export default function AboutSection() {
   )
 }
 
-function CaseTextLink({ href, children }: { href: string; children: React.ReactNode }) {
+function CaseTextLink({ href, children }: { href: string; children: ReactNode }) {
   const goToCase = () => {
     const target = document.querySelector(href)
     if (!target) return

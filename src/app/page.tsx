@@ -5,6 +5,7 @@ import AboutSection     from '@/components/AboutSection'
 import ResultsSection   from '@/components/ResultsSection'
 import ContactSection   from '@/components/ContactSection'
 import SmoothScrollProvider from '@/components/SmoothScrollProvider'
+import { LanguageProvider } from '@/i18n'
 
 // Scene3D uses Three.js — must be client-only
 const Scene3D = dynamic(() => import('@/components/Scene3D'), {
@@ -16,7 +17,7 @@ const Scene3D = dynamic(() => import('@/components/Scene3D'), {
     >
       <div className="text-center space-y-4">
         <div className="w-12 h-12 rounded-full border-2 border-sky-400 border-t-transparent animate-spin mx-auto" />
-        <p className="text-slate-300 font-sans text-sm">Загружается 3D-сцена…</p>
+        <p className="text-slate-300 font-sans text-sm">Завантажується 3D-сцена…</p>
       </div>
     </div>
   ),
@@ -25,14 +26,16 @@ const Scene3D = dynamic(() => import('@/components/Scene3D'), {
 export default function Home() {
   return (
     <SmoothScrollProvider>
-      <main className="relative pb-24 md:pb-0">
-        <Navigation />
-        <HeroSection />
-        <AboutSection />
-        <Scene3D />
-        <ResultsSection />
-        <ContactSection />
-      </main>
+      <LanguageProvider>
+        <main className="relative pb-24 md:pb-0">
+          <Navigation />
+          <HeroSection />
+          <AboutSection />
+          <Scene3D />
+          <ResultsSection />
+          <ContactSection />
+        </main>
+      </LanguageProvider>
     </SmoothScrollProvider>
   )
 }

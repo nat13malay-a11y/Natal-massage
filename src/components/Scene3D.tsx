@@ -6,6 +6,7 @@ import { Float, Sparkles, Environment, MeshDistortMaterial, Torus, Sphere } from
 import * as THREE from 'three'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useI18n, type Lang } from '@/i18n'
 
 // ─── Scene geometry ───────────────────────────────────────────────────────────
 
@@ -223,8 +224,6 @@ const overlaySteps = [
     end:       0.44,
     x:         '8%',
     y:         '32%',
-    title:     'Нейрометодика',
-    desc:      'Воздействие на нервную систему для\nвосстановления функций организма',
     color:     'sky',
   },
   {
@@ -234,8 +233,6 @@ const overlaySteps = [
     end:       0.74,
     x:         '64%',
     y:         '28%',
-    title:     'Реабилитация',
-    desc:      'Комплексные программы для лечения\nсложных неврологических заболеваний',
     color:     'sage',
   },
   {
@@ -245,11 +242,58 @@ const overlaySteps = [
     end:       0.98,
     x:         '12%',
     y:         '64%',
-    title:     'Лечебный массаж',
-    desc:      'Авторские техники для снятия боли\nи улучшения качества жизни',
     color:     'nude',
   },
 ]
+
+const copy: Record<Lang, {
+  eyebrow: string
+  title: string
+  intro: string
+  progress: string
+  steps: Array<{ title: string; desc: string }>
+}> = {
+  uk: {
+    eyebrow: 'Методика',
+    title: 'Наука зцілення',
+    intro: 'Прокрутіть, щоб дослідити методику',
+    progress: 'Скрольте для обертання',
+    steps: [
+      {
+        title: 'Нейрометодика',
+        desc: 'Вплив на нервову систему для\nвідновлення функцій організму',
+      },
+      {
+        title: 'Реабілітація',
+        desc: 'Комплексні програми для роботи\nзі складними неврологічними станами',
+      },
+      {
+        title: 'Лікувальний масаж',
+        desc: 'Авторські техніки для зняття болю\nі покращення якості життя',
+      },
+    ],
+  },
+  ru: {
+    eyebrow: 'Методика',
+    title: 'Наука исцеления',
+    intro: 'Прокрутите, чтобы исследовать методику',
+    progress: 'Скроллите для вращения',
+    steps: [
+      {
+        title: 'Нейрометодика',
+        desc: 'Воздействие на нервную систему для\nвосстановления функций организма',
+      },
+      {
+        title: 'Реабилитация',
+        desc: 'Комплексные программы для лечения\nсложных неврологических заболеваний',
+      },
+      {
+        title: 'Лечебный массаж',
+        desc: 'Авторские техники для снятия боли\nи улучшения качества жизни',
+      },
+    ],
+  },
+}
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value))
 const easeInOut = (value: number) => value * value * (3 - 2 * value)
@@ -264,6 +308,8 @@ function revealForProgress(progress: number, start: number, peak: number, hold: 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 
 export default function Scene3D() {
+  const { lang } = useI18n()
+  const t = copy[lang]
   const sectionRef  = useRef<HTMLDivElement>(null)
   const stickyRef   = useRef<HTMLDivElement>(null)
   const scrollRef   = useRef(0)
@@ -398,16 +444,16 @@ export default function Scene3D() {
         {/* Heading */}
         <div className="absolute top-20 md:top-12 left-0 right-0 text-center z-20 px-5 pointer-events-none">
           <p className="scene-heading text-sm font-medium text-sky-400 uppercase tracking-widest mb-3 font-sans">
-            Методика
+            {t.eyebrow}
           </p>
           <h2
             className="scene-heading heading-section text-white"
             style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.8rem)' }}
           >
-            Наука исцеления
+            {t.title}
           </h2>
           <p className="scene-heading text-slate-300 mt-3 font-sans text-sm">
-            Прокрутите, чтобы исследовать методику
+            {t.intro}
           </p>
         </div>
 
@@ -418,11 +464,12 @@ export default function Scene3D() {
 
         {/* Overlay labels */}
         <div ref={labelsRef} className="absolute inset-x-4 bottom-32 z-10 h-[190px] pointer-events-none md:inset-0 md:h-auto md:block">
-          {overlaySteps.map((step) => {
+          {overlaySteps.map((step, index) => {
+            const stepText = t.steps[index]
             const c = colorMap[step.color]
             return (
               <div
-                key={step.title}
+                key={stepText.title}
                 data-scene-card
                 className={`scene-label-card absolute inset-x-0 bottom-0 md:inset-x-auto md:bottom-auto md:left-[var(--label-left)] md:top-[var(--label-top)] glass-dark border ${c.border} rounded-2xl px-4 py-3 md:px-5 md:py-4 max-w-none md:max-w-[260px] opacity-0 will-change-transform`}
                 style={{
@@ -433,10 +480,10 @@ export default function Scene3D() {
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className={`w-2 h-2 rounded-full ${c.dot}`} />
-                  <span className={`font-semibold text-sm ${c.title} font-sans`}>{step.title}</span>
+                  <span className={`font-semibold text-sm ${c.title} font-sans`}>{stepText.title}</span>
                 </div>
                 <p className="text-slate-200 text-xs leading-relaxed font-sans whitespace-pre-line">
-                  {step.desc}
+                  {stepText.desc}
                 </p>
               </div>
             )
@@ -451,7 +498,7 @@ export default function Scene3D() {
               style={{ width: '0%' }}
             />
           </div>
-          <span className="text-slate-500 text-xs font-sans">Скроллите для вращения</span>
+          <span className="text-slate-500 text-xs font-sans">{t.progress}</span>
         </div>
       </div>
     </section>
