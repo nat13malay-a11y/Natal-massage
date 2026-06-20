@@ -169,10 +169,10 @@ export default function AboutSection() {
               </p>
               <p>
                 Благодаря знаниям, опыту и практике я стала находить не просто причину болезни, а её происхождение.
-                Теперь я бросаю вызов традиционной медицине и знаю: в природе нет болезни, с которой нельзя справиться.
+                И теперь бросаю вызов традиционной медицине.
               </p>
 
-              <div className="grid sm:grid-cols-2 gap-3 py-1">
+              <div className="py-1">
                 <CasePreviewLink
                   id="parkinsons"
                   href="#case-parkinsons"
@@ -184,6 +184,13 @@ export default function AboutSection() {
                   setActivePreview={setActivePreview}
                   setArmedPreview={setArmedPreview}
                 />
+              </div>
+
+              <p>
+                Знаю, что в природе нет болезни, с которой нельзя не справиться.
+              </p>
+
+              <div className="py-1">
                 <CasePreviewLink
                   id="strabismus"
                   href="#case-strabismus"
