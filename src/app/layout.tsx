@@ -15,6 +15,7 @@ const interSans = Inter({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://natal-massage.vercel.app'),
   title: {
     default: 'Малай Наталія Борисівна — нейрореабілітолог, масаж і реабілітація',
     template: '%s | Малай Наталія Борисівна',
@@ -43,12 +44,32 @@ export const metadata: Metadata = {
     shortcut: '/icon.svg',
     apple: '/icon.svg',
   },
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     title: 'Малай Наталія Борисівна — нейрореабілітолог, масаж і реабілітація',
     description:
       'Авторська нейрометодика, лікувальний масаж і реабілітація при складних неврологічних станах.',
+    url: '/',
+    siteName: 'Малай Наталія Борисівна',
+    images: [
+      {
+        url: '/assets/natalya-professor.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Малай Наталія Борисівна — нейрореабілітолог',
+      },
+    ],
     type: 'website',
     locale: 'uk_UA',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Малай Наталія Борисівна — нейрореабілітолог, масаж і реабілітація',
+    description:
+      'Авторська нейрометодика, лікувальний масаж і реабілітація при складних неврологічних станах.',
+    images: ['/assets/natalya-professor.jpg'],
   },
 }
 
