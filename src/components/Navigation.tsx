@@ -7,7 +7,6 @@ const labels: Record<Lang, {
   nav: Array<{ href: string; label: string }>
   mobile: Array<{ href: string; label: string; Icon: typeof HomeIcon }>
   brand: string
-  cta: string
   top: string
   ariaMobile: string
   switchTo: string
@@ -26,7 +25,6 @@ const labels: Record<Lang, {
       { href: '#contact', label: 'Запис', Icon: ContactIcon },
     ],
     brand: 'Малай Н.Б.',
-    cta: 'Записатися',
     top: 'Повернутися на початок сторінки',
     ariaMobile: 'Основна мобільна навігація',
     switchTo: 'Переключити на російську',
@@ -45,7 +43,6 @@ const labels: Record<Lang, {
       { href: '#contact', label: 'Запись', Icon: ContactIcon },
     ],
     brand: 'Малай Н.Б.',
-    cta: 'Записаться',
     top: 'Вернуться к началу страницы',
     ariaMobile: 'Основная мобильная навигация',
     switchTo: 'Переключить на украинский',
@@ -160,12 +157,6 @@ export default function Navigation() {
             ))}
           </ul>
 
-          <a
-            href="#contact"
-            className="inline-flex btn-primary text-sm py-2.5 px-6 min-h-[42px]"
-          >
-            {t.cta}
-          </a>
           <button
             type="button"
             onClick={toggleLang}
