@@ -28,6 +28,17 @@ type PaymentState = {
   failureReason?: string
 }
 
+type PaymentStatusResponse = {
+  ok?: boolean
+  bookingStatus?: string
+  paymentStatus?: string
+  failureReason?: string
+  amount?: number
+  invoiceId?: string
+  pageUrl?: string
+  reference?: string
+}
+
 const text: Record<Lang, {
   title: string
   intro: string
@@ -297,13 +308,48 @@ export default function BookingWidget() {
   }, [])
 
   useEffect(() => {
+    const reference = new URLSearchParams(window.location.search).get('bookingPayment')
+    if (!reference) return
+
+    const cleanUrl = `${window.location.pathname}${window.location.hash}`
+    window.history.replaceState({}, '', cleanUrl)
+
+    fetch(`/api/booking/payment/status?reference=${encodeURIComponent(reference)}`, { cache: 'no-store' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data: PaymentStatusResponse | null) => {
+        if (!data?.ok || !data.invoiceId) return
+
+        const failed = ['failure', 'expired', 'cancelled', 'reversed'].includes(data.paymentStatus || '') || data.bookingStatus === 'cancelled'
+        const confirmed = data.bookingStatus === 'booked'
+
+        setPayment({
+          invoiceId: data.invoiceId,
+          pageUrl: data.pageUrl || '',
+          amount: data.amount || 30000,
+          confirmed,
+          failed,
+          failureReason: data.failureReason,
+        })
+
+        if (confirmed) {
+          setStatus('success')
+          loadAvailability()
+        } else if (failed) {
+          setStatus('error')
+          loadAvailability()
+        }
+      })
+      .catch(() => undefined)
+  }, [])
+
+  useEffect(() => {
     if (!payment?.invoiceId || payment.confirmed || payment.failed) return
 
     const interval = window.setInterval(async () => {
       const response = await fetch(`/api/booking/payment/status?invoiceId=${encodeURIComponent(payment.invoiceId)}`, { cache: 'no-store' }).catch(() => null)
       if (!response?.ok) return
 
-      const data = await response.json().catch(() => null) as { bookingStatus?: string; paymentStatus?: string; failureReason?: string } | null
+      const data = await response.json().catch(() => null) as PaymentStatusResponse | null
       if (!data) return
 
       if (data.bookingStatus === 'booked') {
@@ -403,7 +449,7 @@ export default function BookingWidget() {
                   href={payment.pageUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-primary mt-4 inline-flex w-full justify-center"
+                  className={`btn-primary mt-4 inline-flex w-full justify-center ${payment.pageUrl ? '' : 'pointer-events-none opacity-60'}`}
                 >
                   {t.paymentOpen}
                 </a>

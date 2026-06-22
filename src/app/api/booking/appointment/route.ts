@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { addDays, displayWeekStart, generateAvailability, todayKyiv, type BookingAppointment, type BookingOverride, type BookingWeekSetting } from '@/lib/booking'
+import { depositAmountKopiykas, getJarPaymentConfig } from '@/lib/monobankJar'
 import { supabase } from '@/lib/supabaseClient'
 
 export const dynamic = 'force-dynamic'
@@ -20,13 +21,6 @@ type AppointmentPayload = {
     timezone?: string
     viewport?: string
   }
-}
-
-type MonoInvoiceResponse = {
-  invoiceId?: string
-  pageUrl?: string
-  errorDescription?: string
-  errText?: string
 }
 
 function noStore(status = 200) {
@@ -77,16 +71,15 @@ export async function POST(request: Request) {
   const date = clean(payload.date, 20)
   const time = clean(payload.time, 20)
   const comment = multiline(payload.comment, 1200)
-  const depositAmount = Number(process.env.BOOKING_DEPOSIT_AMOUNT || process.env.booking_deposit_amount || 300)
-  const amount = Math.round((Number.isFinite(depositAmount) ? depositAmount : 300) * 100)
-  const monoToken = process.env.MONOBANK_MERCHANT_TOKEN || process.env.monobank_merchant_token
+  const amount = depositAmountKopiykas()
+  const jarConfig = getJarPaymentConfig()
 
   if (!name || !isFullUkrainianPhone(phone) || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
     return NextResponse.json({ ok: false, error: 'Name, phone, date and time are required' }, noStore(400))
   }
 
-  if (!monoToken) {
-    return NextResponse.json({ ok: false, error: 'Monobank payment is not configured' }, noStore(503))
+  if (!jarConfig.token || !jarConfig.jarId || !jarConfig.jarUrl) {
+    return NextResponse.json({ ok: false, error: 'Monobank jar payment is not configured' }, noStore(503))
   }
 
   const start = todayKyiv()
@@ -153,7 +146,6 @@ export async function POST(request: Request) {
   }
 
   const city = day?.city || weeks.find((item) => item.weekStart === weekStart)?.city || null
-  const origin = new URL(request.url).origin
   const reference = crypto.randomUUID()
   const submittedAt = payload.submittedAt || new Date().toISOString()
   const client = {
@@ -162,7 +154,9 @@ export async function POST(request: Request) {
     mono: {
       reference,
       amount,
-      status: 'creating',
+      method: 'jar',
+      jarId: jarConfig.jarId,
+      status: 'waiting',
     },
   }
 
@@ -184,59 +178,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: pendingInsert.error.message }, noStore(pendingInsert.error.code === '23505' ? 409 : 500))
   }
 
-  const invoiceResponse = await fetch('https://api.monobank.ua/api/merchant/invoice/create', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Token': monoToken,
-      'X-Cms': 'Natalya Massage',
-      'X-Cms-Version': '1.0.0',
-    },
-    body: JSON.stringify({
-      amount,
-      ccy: 980,
-      merchantPaymInfo: {
-        reference,
-        destination: `Задаток за запис ${date} ${time}`,
-        comment: `Задаток за запис ${date} ${time}`,
-        basketOrder: [
-          {
-            name: 'Задаток за прийом',
-            qty: 1,
-            sum: amount,
-            total: amount,
-            unit: 'послуга',
-            code: 'booking-deposit',
-          },
-        ],
-      },
-      redirectUrl: `${origin}/?bookingPayment=${encodeURIComponent(reference)}`,
-      webHookUrl: `${origin}/api/booking/payment/webhook`,
-      validity: 1800,
-      paymentType: 'debit',
-    }),
-  }).catch(() => null)
-
-  const invoiceData = invoiceResponse ? (await invoiceResponse.json().catch(() => ({}))) as MonoInvoiceResponse : {}
-
-  if (!invoiceResponse?.ok || !invoiceData.invoiceId || !invoiceData.pageUrl) {
-    await supabase
-      .from('booking_appointments')
-      .update({
-        status: 'cancelled',
-        client: {
-          ...client,
-          mono: {
-            ...client.mono,
-            status: 'invoice_error',
-            error: invoiceData.errorDescription || invoiceData.errText || 'Could not create invoice',
-          },
-        },
-      })
-      .eq('id', pendingInsert.data.id)
-
-    return NextResponse.json({ ok: false, error: invoiceData.errorDescription || invoiceData.errText || 'Could not create payment invoice' }, noStore(502))
-  }
+  const paymentUrl = `${jarConfig.jarUrl}${jarConfig.jarUrl.includes('?') ? '&' : '?'}booking=${encodeURIComponent(reference)}&amount=${Math.round(amount / 100)}`
 
   await supabase
     .from('booking_appointments')
@@ -245,9 +187,9 @@ export async function POST(request: Request) {
         ...client,
         mono: {
           ...client.mono,
-          invoiceId: invoiceData.invoiceId,
-          pageUrl: invoiceData.pageUrl,
-          status: 'created',
+          invoiceId: reference,
+          pageUrl: paymentUrl,
+          status: 'waiting',
         },
         city,
       },
@@ -257,8 +199,8 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     paymentRequired: true,
-    invoiceId: invoiceData.invoiceId,
-    pageUrl: invoiceData.pageUrl,
+    invoiceId: reference,
+    pageUrl: paymentUrl,
     amount,
     reference,
   }, noStore())
