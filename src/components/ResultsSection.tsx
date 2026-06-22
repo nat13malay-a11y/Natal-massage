@@ -128,6 +128,52 @@ const copy: Record<Lang, {
     more: 'Это лишь малая часть случаев. Нейрометодика помогает при более чем 30 видах расстройств — от болезни Паркинсона до посттравматических состояний.',
     cta: 'Обсудить ваш случай',
   },
+  en: {
+    eyebrow: 'Real results',
+    title: 'Success stories',
+    intro: 'Every patient has a unique story. Here are a few cases where the neuromethod produced results doctors did not expect.',
+    stats: [
+      { value: '500+', label: 'Patients' },
+      { value: '15+', label: 'Years experience' },
+      { value: '98%', label: 'Positive results' },
+      { value: '30+', label: 'Types of conditions' },
+    ],
+    cases: [
+      {
+        tag: 'CP',
+        heading: 'Movement recovery',
+        patient: 'Child, 6 years old',
+        text: 'A boy with cerebral palsy could not walk independently or control hand movements. After a neuromethod course, motor function was restored: the child began walking without support and making precise hand movements.',
+        metrics: [
+          { value: '8', label: 'months of work' },
+          { value: '100%', label: 'walks alone' },
+        ],
+      },
+      {
+        tag: 'Congenital strabismus',
+        heading: 'Overcoming strabismus',
+        patient: 'Girl, 9 years old',
+        text: 'A girl had pronounced strabismus: one eye deviated by 30 degrees. Surgery did not help. The neuromethod helped normalize eye muscle tone, and the strabismus disappeared without another operation.',
+        metrics: [
+          { value: '4', label: 'months of course' },
+          { value: '0°', label: 'deviation' },
+        ],
+      },
+      {
+        tag: 'Parkinson’s disease',
+        heading: 'Working with Parkinson’s disease',
+        patient: 'Individual program',
+        text: 'With Parkinson’s disease, the work focuses on restoring the connection between the body and nervous system: palpation, gentle influence, reducing muscle tension, and gradually returning movement control.',
+        metrics: [
+          { value: '1:1', label: 'approach' },
+          { value: '15+', label: 'years practice' },
+        ],
+      },
+    ],
+    quote: '“Natalia Borysivna’s method gave us something we were afraid to even dream about”',
+    more: 'These are only a few cases. The neuromethod helps with more than 30 types of disorders, from Parkinson’s disease to post-traumatic conditions.',
+    cta: 'Discuss your case',
+  },
 }
 
 export default function ResultsSection() {
@@ -311,7 +357,7 @@ export default function ResultsSection() {
           <p className="text-slate-600 font-sans max-w-lg mx-auto">
             {t.more}
           </p>
-          <a href="#contact" className="btn-primary inline-block">
+          <a href="#contact" className="btn-primary inline-flex">
             {t.cta}
           </a>
         </div>

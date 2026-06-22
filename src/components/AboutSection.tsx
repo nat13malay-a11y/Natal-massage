@@ -141,6 +141,47 @@ const copy: Record<Lang, {
     servicesTitle: 'Направления работы',
     services: services.map(({ title, desc, bullets }) => ({ title, desc, bullets })),
   },
+  en: {
+    eyebrow: 'About me',
+    titleA: 'Health can',
+    titleB: 'be restored',
+    paragraphs: [
+      'My name is Natalia Borysivna Malay. I am a neurorehabilitation specialist. This path grew from abilities that appeared in childhood.',
+      'Because I did not speak until the age of 15, I developed a subtle ability to feel nature and a person’s condition. I gave my first massage at the age of 7, and it helped my grandmother. I worked on my speech independently: singing, reading, and training every day. By helping myself and my family, I learned in practice how nature works.',
+      'For many years I dealt with different health conditions without pills. In 2007 I met a cardiologist who helped me establish my palpation method. Communication and study with qualified specialists, professors, and academics helped me formulate my own method.',
+      'Through knowledge, experience, and practice, I learned to find not only the cause of disease, but its origin. Now I challenge traditional medicine.',
+      'I know that in nature there is no disease that cannot be addressed.',
+      'I work with special programs: speech disorders, autism in children, cerebral palsy, and other complex conditions. The basis of my work is an individual approach to each person.',
+      'I believe every person should feel their nature and be in their right place.',
+    ],
+    parkinson: 'Parkinson’s disease',
+    strabismus: 'Congenital strabismus',
+    cerebralPalsy: 'Cerebral palsy treatment',
+    massageAlt: 'Natalia at work',
+    years: 'years experience',
+    certAlt: 'Specialist certificate',
+    certTitle: 'Certified rehabilitation specialist.',
+    certText: 'Neurorehabilitation specialist, author neuromethod.',
+    servicesEyebrow: 'Services',
+    servicesTitle: 'Areas of work',
+    services: [
+      {
+        title: 'Neuromethod',
+        desc: 'A unique system for working with the nervous system to restore motor functions, support neurological disorders, and rehabilitate after injuries.',
+        bullets: ['Post-stroke rehabilitation', 'Cerebral palsy treatment', 'Restoring neural connections'],
+      },
+      {
+        title: 'Therapeutic massage',
+        desc: 'Professional therapeutic and relaxing massage using author techniques. Pain relief, improved circulation, and body renewal.',
+        bullets: ['Anti-cellulite massage', 'Facial massage', 'Rehabilitation massage'],
+      },
+      {
+        title: 'Rehabilitation',
+        desc: 'Comprehensive rehabilitation programs for complex conditions: neurological disorders, musculoskeletal issues, and post-traumatic states.',
+        bullets: ['Tourette syndrome', 'Parkinson’s disease', 'Post-stroke rehabilitation'],
+      },
+    ],
+  },
 }
 
 export default function AboutSection() {

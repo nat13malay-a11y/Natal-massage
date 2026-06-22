@@ -293,6 +293,26 @@ const copy: Record<Lang, {
       },
     ],
   },
+  en: {
+    eyebrow: 'Method',
+    title: 'The Science of Healing',
+    intro: 'Scroll to explore the method',
+    progress: 'Scroll to rotate',
+    steps: [
+      {
+        title: 'Neuromethod',
+        desc: 'Working with the nervous system\nto restore body functions',
+      },
+      {
+        title: 'Rehabilitation',
+        desc: 'Comprehensive programs for complex\nneurological conditions',
+      },
+      {
+        title: 'Therapeutic massage',
+        desc: 'Author techniques for pain relief\nand better quality of life',
+      },
+    ],
+  },
 }
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value))

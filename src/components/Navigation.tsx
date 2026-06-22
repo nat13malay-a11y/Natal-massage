@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { usePathname } from 'next/navigation'
 import { useI18n, type Lang } from '@/i18n'
 
 const labels: Record<Lang, {
@@ -9,7 +10,7 @@ const labels: Record<Lang, {
   brand: string
   top: string
   ariaMobile: string
-  switchTo: string
+  languageMenu: string
 }> = {
   uk: {
     nav: [
@@ -27,7 +28,7 @@ const labels: Record<Lang, {
     brand: 'Малай Н.Б.',
     top: 'Повернутися на початок сторінки',
     ariaMobile: 'Основна мобільна навігація',
-    switchTo: 'Переключити на російську',
+    languageMenu: 'Вибір мови',
   },
   ru: {
     nav: [
@@ -45,14 +46,71 @@ const labels: Record<Lang, {
     brand: 'Малай Н.Б.',
     top: 'Вернуться к началу страницы',
     ariaMobile: 'Основная мобильная навигация',
-    switchTo: 'Переключить на украинский',
+    languageMenu: 'Выбор языка',
+  },
+  en: {
+    nav: [
+      { href: '#about', label: 'About' },
+      { href: '#scene', label: 'Method' },
+      { href: '#results', label: 'Results' },
+      { href: '#contact', label: 'Contacts' },
+    ],
+    mobile: [
+      { href: '#hero', label: 'Home', Icon: HomeIcon },
+      { href: '#scene', label: 'Method', Icon: MethodIcon },
+      { href: '#results', label: 'Cases', Icon: ResultsIcon },
+      { href: '#contact', label: 'Booking', Icon: ContactIcon },
+    ],
+    brand: 'Malay N.B.',
+    top: 'Return to the top of the page',
+    ariaMobile: 'Main mobile navigation',
+    languageMenu: 'Choose language',
   },
 }
+
+const languageOptions: Array<{
+  lang: Lang
+  short: string
+  label: string
+  aria: Record<Lang, string>
+}> = [
+  {
+    lang: 'uk',
+    short: 'UA',
+    label: 'UKR',
+    aria: {
+      uk: 'Переключити на українську',
+      ru: 'Переключить на украинский',
+      en: 'Switch to Ukrainian',
+    },
+  },
+  {
+    lang: 'ru',
+    short: 'RU',
+    label: 'RUS',
+    aria: {
+      uk: 'Переключити на російську',
+      ru: 'Переключить на русский',
+      en: 'Switch to Russian',
+    },
+  },
+  {
+    lang: 'en',
+    short: 'EN',
+    label: 'ENG',
+    aria: {
+      uk: 'Переключити на англійську',
+      ru: 'Переключить на английский',
+      en: 'Switch to English',
+    },
+  },
+]
 
 const navHrefs = ['#hero', '#scene', '#results', '#contact']
 
 export default function Navigation() {
-  const { lang, toggleLang } = useI18n()
+  const { lang } = useI18n()
+  const pathname = usePathname()
   const t = labels[lang]
   const [scrolled, setScrolled] = useState(false)
   const [activeHref, setActiveHref] = useState('#hero')
@@ -79,6 +137,11 @@ export default function Navigation() {
 
   useEffect(() => {
     const updateActiveFromScroll = () => {
+      if (pathname !== '/') {
+        setActiveHref('#hero')
+        return
+      }
+
       const anchorY = window.scrollY + window.innerHeight * 0.46
       let current = navHrefs[0]
 
@@ -98,7 +161,7 @@ export default function Navigation() {
       window.removeEventListener('scroll', updateActiveFromScroll)
       window.removeEventListener('resize', updateActiveFromScroll)
     }
-  }, [])
+  }, [pathname])
 
   useEffect(() => {
     const syncPill = () => updateActivePill(activeHref)
@@ -114,8 +177,17 @@ export default function Navigation() {
 
   const scrollTo = (href: string) => {
     setActiveHref(href)
+    if (href.startsWith('/')) {
+      window.location.href = href
+      return
+    }
+
     const el = document.querySelector(href)
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } else {
+      window.location.href = `/${href}`
+    }
   }
 
   return (
@@ -129,7 +201,10 @@ export default function Navigation() {
           }`}
         >
           <button
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            onClick={() => {
+              if (pathname === '/') window.scrollTo({ top: 0, behavior: 'smooth' })
+              else window.location.href = '/'
+            }}
             className="flex items-center gap-3 group cursor-pointer rounded-full"
             aria-label={t.top}
           >
@@ -157,14 +232,7 @@ export default function Navigation() {
             ))}
           </ul>
 
-          <button
-            type="button"
-            onClick={toggleLang}
-            className="min-h-[42px] rounded-full border border-sky-200 bg-white/70 px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-sky-50 hover:text-sky-700"
-            aria-label={t.switchTo}
-          >
-            {lang === 'uk' ? 'RU' : 'UA'}
-          </button>
+          <LanguageSwitcher placement="desktop" menuLabel={t.languageMenu} currentLang={lang} />
         </div>
       </nav>
 
@@ -190,7 +258,7 @@ export default function Navigation() {
                   itemRefs.current[href] = node
                 }}
                 onClick={() => scrollTo(href)}
-                className={`relative z-10 flex h-11 min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-full px-1 font-sans text-[9px] font-semibold leading-none transition-colors duration-300 min-[370px]:text-[10px] ${
+                className={`relative z-10 flex h-11 min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-full px-1 font-sans text-[9px] font-semibold leading-none transition-colors duration-300 min-[370px]:text-[px] ${
                   activeHref === href ? 'text-slate-950' : 'text-slate-700'
                 }`}
                 aria-current={activeHref === href ? 'page' : undefined}
@@ -199,18 +267,108 @@ export default function Navigation() {
                 <span className="max-w-full truncate">{label}</span>
               </button>
             ))}
-            <button
-              type="button"
-              onClick={toggleLang}
-              className="relative z-10 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-sky-100/70 bg-white/52 font-sans text-xs font-bold text-sky-700 shadow-[inset_0_1px_1px_rgba(255,255,255,0.86)] transition-colors duration-300 hover:bg-sky-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
-              aria-label={t.switchTo}
-            >
-              {lang === 'uk' ? 'RU' : 'UA'}
-            </button>
+            <LanguageSwitcher placement="mobile" menuLabel={t.languageMenu} currentLang={lang} />
           </div>
         </div>
       </nav>
     </>
+  )
+}
+
+function LanguageSwitcher({
+  placement,
+  menuLabel,
+  currentLang,
+}: {
+  placement: 'desktop' | 'mobile'
+  menuLabel: string
+  currentLang: Lang
+}) {
+  const { lang, setLang } = useI18n()
+  const [open, setOpen] = useState(false)
+  const [changing, setChanging] = useState(false)
+  const switcherRef = useRef<HTMLDivElement>(null)
+  const activeOption = languageOptions.find((option) => option.lang === lang) ?? languageOptions[0]
+
+  useEffect(() => {
+    if (!open) return
+
+    const closeOnOutside = (event: PointerEvent) => {
+      if (!switcherRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+
+    window.addEventListener('pointerdown', closeOnOutside)
+    window.addEventListener('keydown', closeOnEscape)
+
+    return () => {
+      window.removeEventListener('pointerdown', closeOnOutside)
+      window.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [open])
+
+  const chooseLang = (nextLang: Lang) => {
+    if (nextLang === lang) {
+      setOpen(false)
+      return
+    }
+
+    setChanging(true)
+    setOpen(false)
+
+    window.setTimeout(() => {
+      setLang(nextLang)
+      window.setTimeout(() => setChanging(false), 120)
+    }, 120)
+  }
+
+  return (
+    <div
+      ref={switcherRef}
+      className={`language-switcher ${open ? 'open' : ''}`}
+      data-placement={placement}
+      data-active-lang={currentLang}
+    >
+      <button
+        type="button"
+        className={`lang-main ${changing ? 'changing' : ''}`}
+        onClick={(event) => {
+          event.stopPropagation()
+          setOpen((value) => !value)
+        }}
+        aria-label={menuLabel}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <span className="main-mark" aria-hidden="true">
+          {activeOption.short}
+        </span>
+        <span className="main-text">{activeOption.label}</span>
+        <span className="main-line" aria-hidden="true" />
+      </button>
+
+      {languageOptions.map((option) => (
+        <button
+          key={option.lang}
+          type="button"
+          className={`lang-option lang-${option.lang}`}
+          data-selected={option.lang === lang}
+          onClick={(event) => {
+            event.stopPropagation()
+            chooseLang(option.lang)
+          }}
+          aria-label={option.aria[lang]}
+          aria-current={option.lang === lang ? 'true' : undefined}
+          role="menuitem"
+        >
+          <span className="lang-dot" aria-hidden="true" />
+          <span>{option.label}</span>
+        </button>
+      ))}
+    </div>
   )
 }
 

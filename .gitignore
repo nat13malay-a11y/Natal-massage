@@ -27,6 +27,7 @@ pnpm-debug.log*
 .vscode/
 .claude/
 .codex/
+tsconfig.tsbuildinfo
 
 # local source duplicates, public/assets contains deploy assets
 /assets/

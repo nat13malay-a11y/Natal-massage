@@ -47,6 +47,20 @@ const copy: Record<Lang, {
     rights: '© 2026 · Нейрометодика и массаж · Все права защищены',
     made: 'Сделано для здоровья',
   },
+  en: {
+    eyebrow: 'Contact me',
+    title: 'Start your path to health',
+    intro: 'Book a consultation. Together we will determine how the neuromethod can help your specific case.',
+    phoneLabel: 'Phone',
+    phoneAria: 'Call +38 097 053 49 33',
+    emailLabel: 'Email',
+    visitLabel: 'Appointments',
+    visitText: <>Odesa <br/> Bilhorod-Dnistrovskyi <br/> Trips to other cities are discussed individually</>,
+    social: 'Follow the results on social media',
+    footerName: 'Natalia Borysivna Malay',
+    rights: '© 2026 · Neuromethod and massage · All rights reserved',
+    made: 'Made for health',
+  },
 }
 
 export default function ContactSection() {

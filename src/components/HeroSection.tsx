@@ -11,7 +11,7 @@ const text: Record<Lang, {
   subtitle: string
   cta: string
   results: string
-  stats: Array<{ value: string; label: string }>
+  stats: Array<{ value: string; label: string; price?: boolean }>
   alt: string
   certifiedSmall: string
   certifiedMain: string
@@ -29,6 +29,7 @@ const text: Record<Lang, {
       { value: '15+', label: 'років досвіду' },
       { value: '500+', label: 'пацієнтів' },
       { value: '98%', label: 'результат' },
+      { value: '1000', label: 'в час', price: true },
     ],
     alt: 'Малай Наталія Борисівна — нейрометодика',
     certifiedSmall: 'Сертифікований спеціаліст',
@@ -47,6 +48,7 @@ const text: Record<Lang, {
       { value: '15+', label: 'лет опыта' },
       { value: '500+', label: 'пациентов' },
       { value: '98%', label: 'результат' },
+      { value: '1000', label: 'в час', price: true },
     ],
     alt: 'Малай Наталья Борисовна — нейрометодика',
     certifiedSmall: 'Сертифицированный специалист',
@@ -54,6 +56,25 @@ const text: Record<Lang, {
     uniqueSmall: 'Уникальная',
     uniqueMain: 'методика',
     scroll: 'Прокрутить',
+  },
+  en: {
+    tag: 'Neuromethod · Massage · Rehabilitation',
+    words: ['Natalia', 'Borysivna', 'Malay'],
+    subtitle: 'For more than 15 years I have helped people restore health through unique neurorehabilitation methods and professional massage. Together we will find your path to recovery.',
+    cta: 'Book a consultation',
+    results: 'Success stories',
+    stats: [
+      { value: '15+', label: 'years experience' },
+      { value: '500+', label: 'patients' },
+      { value: '98%', label: 'result' },
+      { value: '1000', label: 'per hour', price: true },
+    ],
+    alt: 'Natalia Borysivna Malay — neuromethod',
+    certifiedSmall: 'Certified specialist',
+    certifiedMain: 'Neuromethod',
+    uniqueSmall: 'Unique',
+    uniqueMain: 'method',
+    scroll: 'Scroll',
   },
 }
 
@@ -230,10 +251,18 @@ export default function HeroSection() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-6 pt-4 border-t border-nude-200">
-            {t.stats.map(({ value, label }) => (
+          <div className="grid grid-cols-[0.75fr_0.9fr_0.75fr_1.35fr] gap-1 sm:gap-3 pt-4 border-t border-nude-200">
+            {t.stats.map(({ value, label, price }) => (
               <div key={label} className="hero-stat text-center">
-                <div className="stat-number">{value}</div>
+                {price ? (
+                  <div className="stat-number stat-price" aria-label={`от ${value} гривен ${label}`}>
+                    <span className="stat-price-prefix">от</span>
+                    <span className="stat-price-value">{value}</span>
+                    <span className="stat-price-currency">₴</span>
+                  </div>
+                ) : (
+                  <div className="stat-number">{value}</div>
+                )}
                 <div className="text-[0.68rem] sm:text-xs text-slate-600 font-sans mt-1 uppercase">{label}</div>
               </div>
             ))}

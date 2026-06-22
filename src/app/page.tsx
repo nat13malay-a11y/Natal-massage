@@ -6,6 +6,7 @@ import ResultsSection   from '@/components/ResultsSection'
 import ContactSection   from '@/components/ContactSection'
 import SmoothScrollProvider from '@/components/SmoothScrollProvider'
 import { LanguageProvider } from '@/i18n'
+import AnalyticsTracker from '@/components/AnalyticsTracker'
 
 // Scene3D uses Three.js — must be client-only
 const Scene3D = dynamic(() => import('@/components/Scene3D'), {
@@ -27,6 +28,7 @@ export default function Home() {
   return (
     <SmoothScrollProvider>
       <LanguageProvider>
+        <AnalyticsTracker source="site" />
         <main className="relative pb-24 md:pb-0">
           <Navigation />
           <HeroSection />

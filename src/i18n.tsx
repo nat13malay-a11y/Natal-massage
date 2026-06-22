@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
-export type Lang = 'uk' | 'ru'
+export type Lang = 'uk' | 'ru' | 'en'
 
 type LanguageContextValue = {
   lang: Lang
@@ -12,12 +12,18 @@ type LanguageContextValue = {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null)
 
+function getInitialLang(): Lang {
+  if (typeof window === 'undefined') return 'uk'
+  const saved = window.localStorage.getItem('site-lang')
+  return saved === 'ru' || saved === 'uk' || saved === 'en' ? saved : 'uk'
+}
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>('uk')
+  const [lang, setLangState] = useState<Lang>(getInitialLang)
 
   useEffect(() => {
     const saved = window.localStorage.getItem('site-lang')
-    if (saved === 'ru' || saved === 'uk') setLangState(saved)
+    if (saved === 'ru' || saved === 'uk' || saved === 'en') setLangState(saved)
   }, [])
 
   const setLang = (nextLang: Lang) => {
@@ -34,7 +40,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     () => ({
       lang,
       setLang,
-      toggleLang: () => setLang(lang === 'uk' ? 'ru' : 'uk'),
+      toggleLang: () => setLang(lang === 'uk' ? 'ru' : lang === 'ru' ? 'en' : 'uk'),
     }),
     [lang],
   )
