@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { formatDateHuman, type BookingDay } from '@/lib/booking'
+import { type BookingDay } from '@/lib/booking'
 import { useI18n, type Lang } from '@/i18n'
 
 type AvailabilityResponse = {
@@ -113,6 +113,15 @@ function shortDate(date: string) {
   return `${day}.${month}`
 }
 
+function weekdayShort(day: BookingDay, lang: Lang) {
+  const labels: Record<Lang, string[]> = {
+    uk: ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+    ru: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+    en: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+  }
+  return labels[lang][day.weekday]
+}
+
 export default function BookingWidget() {
   const { lang } = useI18n()
   const t = text[lang]
@@ -126,11 +135,8 @@ export default function BookingWidget() {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [openDate, setOpenDate] = useState('')
 
-  const selectedDay = useMemo(
-    () => days.find((day) => day.date === selectedDate) || null,
-    [days, selectedDate],
-  )
   const weekRows = useMemo(() => {
     const rows: BookingDay[][] = []
     days.slice(0, 28).forEach((day) => {
@@ -143,7 +149,6 @@ export default function BookingWidget() {
     })
     return rows
   }, [days])
-  const availableSlots = selectedDay?.slots.filter((slot) => slot.available) || []
 
   const loadAvailability = async () => {
     setLoading(true)
@@ -163,6 +168,7 @@ export default function BookingWidget() {
     const firstAvailable = nextDays.find((day) => day.available)
     setSelectedDate((current) => current || firstAvailable?.date || nextDays[0]?.date || '')
     setSelectedTime('')
+    setOpenDate(firstAvailable?.date || '')
   }
 
   useEffect(() => {
@@ -241,9 +247,10 @@ export default function BookingWidget() {
             ))}
             {!loading && weekRows.map((week, weekIndex) => {
               const city = week.find((day) => day.city)?.city
+              const weekOpen = week.some((day) => day.date === openDate)
 
               return (
-                <div key={week[0]?.weekStart || weekIndex} className={`rounded-[1rem] border border-white/65 bg-white/42 p-2 ${weekIndex >= 2 ? 'hidden' : ''}`}>
+                <div key={week[0]?.weekStart || weekIndex} className={`rounded-[1rem] border border-white/65 bg-white/42 p-2 transition-[margin] duration-300 ${weekOpen ? 'my-7 sm:my-8' : ''} ${weekIndex >= 2 ? 'hidden' : ''}`}>
                   <div className="mb-2 flex min-h-4 items-center justify-between gap-3 px-1">
                     <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
                       {shortDate(week[0]?.date || '')} - {shortDate(week[week.length - 1]?.date || '')}
@@ -257,32 +264,76 @@ export default function BookingWidget() {
                   <div className="grid grid-cols-7 gap-1.5">
                     {week.map((day) => {
                       const active = day.date === selectedDate
+                      const open = day.date === openDate
                       const disabled = !day.available
                       const freeSlots = day.slots.filter((slot) => slot.available).length
+                      const daySlots = day.slots.filter((slot) => slot.available)
 
                       return (
-                        <button
-                          key={day.date}
-                          type="button"
-                          onClick={() => {
-                            setSelectedDate(day.date)
-                            setSelectedTime('')
-                            setStatus('idle')
-                          }}
-                          disabled={disabled}
-                          className={`aspect-square cursor-pointer rounded-xl border px-1 py-1.5 text-center backdrop-blur-md transition-all duration-300 disabled:cursor-not-allowed sm:rounded-2xl sm:px-1.5 sm:py-2 ${
-                            active
-                              ? 'scale-[1.04] border-sky-300 bg-gradient-to-br from-white/96 to-sky-50/86 text-slate-800 shadow-[0_16px_34px_rgba(61,148,192,0.18),inset_0_1px_0_rgba(255,255,255,0.85)]'
-                              : disabled
-                                ? 'border-white/60 bg-white/45 text-slate-300'
-                                : 'border-white/85 bg-gradient-to-br from-white/86 to-white/54 text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] hover:-translate-y-0.5 hover:border-sky-200 hover:bg-white hover:shadow-[0_10px_24px_rgba(61,148,192,0.12)]'
-                          }`}
-                        >
-                          <span className="block text-base font-black leading-none sm:text-xl">{dayNumber(day.date)}</span>
-                          <span className="mt-1 block text-[7.5px] font-bold uppercase leading-tight text-slate-400 sm:text-[9px]">
-                            {day.closed ? t.closed : day.available ? `${freeSlots} ${t.free}` : t.full}
-                          </span>
-                        </button>
+                        <div key={day.date} className={`relative aspect-square ${open ? 'z-50' : active ? 'z-30' : 'z-0'}`}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (disabled) return
+                              const sameDate = selectedDate === day.date
+                              setSelectedDate(day.date)
+                              if (!sameDate) setSelectedTime('')
+                              setOpenDate((current) => current === day.date ? '' : day.date)
+                              setStatus('idle')
+                            }}
+                            disabled={disabled}
+                            className={`relative z-20 h-full w-full cursor-pointer rounded-xl border px-1 py-1.5 text-center backdrop-blur-[18px] transition-all duration-300 disabled:cursor-not-allowed sm:rounded-2xl sm:px-1.5 sm:py-2 ${
+                              active
+                                ? 'scale-[1.08] border-sky-300 bg-gradient-to-br from-white/96 to-sky-50/76 text-slate-800 shadow-[0_22px_54px_rgba(61,148,192,0.24),0_0_38px_rgba(99,176,216,0.18),inset_0_1px_0_rgba(255,255,255,0.9)]'
+                                : disabled
+                                  ? 'border-white/60 bg-white/45 text-slate-300'
+                                  : 'border-white/85 bg-gradient-to-br from-white/86 to-white/54 text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.07),inset_0_1px_0_rgba(255,255,255,0.65)] hover:-translate-y-0.5 hover:scale-[1.03] hover:border-sky-200 hover:bg-white hover:shadow-[0_18px_48px_rgba(61,148,192,0.16)]'
+                            }`}
+                          >
+                            <span className="block text-base font-black leading-none sm:text-xl">
+                              {active && selectedTime ? selectedTime : dayNumber(day.date)}
+                            </span>
+                            <span className="mt-1 block text-[7.5px] font-bold uppercase leading-tight text-slate-400 sm:text-[9px]">
+                              {active && selectedTime ? `${weekdayShort(day, lang)}, ${dayNumber(day.date)}` : day.closed ? t.closed : day.available ? `${freeSlots} ${t.free}` : t.full}
+                            </span>
+                          </button>
+
+                          {daySlots.map((slot, index) => {
+                            const total = daySlots.length
+                            const angle = -90 + (360 / total) * index
+                            const visible = open
+                            const radius = 'clamp(3.2rem, 8vw, 5.25rem)'
+                            const transform = visible
+                              ? `translate(-50%, -50%) rotate(${angle}deg) translateX(${radius}) rotate(${-angle}deg) scale(1)`
+                              : `translate(-50%, -50%) rotate(${angle}deg) translateX(0) rotate(${-angle}deg) scale(0.35)`
+
+                            return (
+                              <button
+                                key={slot.time}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedDate(day.date)
+                                  setSelectedTime(slot.time)
+                                  setOpenDate('')
+                                  setStatus('idle')
+                                }}
+                                className={`absolute left-1/2 top-1/2 z-40 h-8 w-14 rounded-2xl border text-[11px] font-black backdrop-blur-[14px] transition-all duration-500 sm:h-10 sm:w-[4.5rem] sm:text-sm ${
+                                  selectedDate === day.date && selectedTime === slot.time
+                                    ? 'border-sky-300 bg-gradient-to-br from-sky-200/95 to-sage-200/88 text-slate-800 shadow-[0_18px_48px_rgba(61,148,192,0.32),0_0_30px_rgba(99,176,216,0.22),inset_0_1px_0_rgba(255,255,255,0.72)]'
+                                    : 'border-white/90 bg-gradient-to-br from-white/96 to-white/68 text-slate-800 shadow-[0_20px_52px_rgba(15,23,42,0.22),0_0_22px_rgba(255,255,255,0.75),inset_0_1px_0_rgba(255,255,255,0.82)] hover:border-sky-300 hover:bg-white hover:shadow-[0_24px_62px_rgba(61,148,192,0.28),0_0_30px_rgba(99,176,216,0.18)]'
+                                }`}
+                                style={{
+                                  opacity: visible ? 1 : 0,
+                                  pointerEvents: visible ? 'auto' : 'none',
+                                  transform,
+                                  transitionDelay: visible ? `${index * 45}ms` : '0ms',
+                                }}
+                              >
+                                {slot.time}
+                              </button>
+                            )
+                          })}
+                        </div>
                       )
                     })}
                   </div>
@@ -292,55 +343,6 @@ export default function BookingWidget() {
           </div>
         </div>
 
-        <div>
-          <div className="mb-2 flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-wide text-slate-500">
-            <span>{t.time}</span>
-            {selectedDay && <span className="normal-case tracking-normal text-slate-400">{formatDateHuman(selectedDay.date, lang === 'en' ? 'en-GB' : lang === 'ru' ? 'ru-RU' : 'uk-UA')}</span>}
-          </div>
-          <div className="rounded-[1.1rem] border border-white/70 bg-white/42 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
-            {availableSlots.length ? (
-              <div>
-                <div className="mb-3 flex items-center gap-3 rounded-2xl border border-white/70 bg-gradient-to-br from-white/90 to-sky-50/58 p-2.5 shadow-[0_10px_26px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.75)]">
-                  <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-sky-100 bg-white text-center shadow-[0_8px_18px_rgba(61,148,192,0.12)]">
-                    <span className="block text-xl font-black leading-none text-slate-800">{dayNumber(selectedDay?.date || '')}</span>
-                  </div>
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-black text-slate-700">
-                      {selectedTime || t.time}
-                    </div>
-                    <div className="mt-0.5 truncate text-xs font-bold text-slate-400">
-                      {selectedDay ? formatDateHuman(selectedDay.date, lang === 'en' ? 'en-GB' : lang === 'ru' ? 'ru-RU' : 'uk-UA') : ''}
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                  {availableSlots.map((slot, index) => (
-                    <button
-                      key={slot.time}
-                      type="button"
-                      onClick={() => {
-                        setSelectedTime(slot.time)
-                        setStatus('idle')
-                      }}
-                      className={`min-h-10 cursor-pointer rounded-2xl border px-3 text-sm font-black backdrop-blur-md transition-all duration-300 ${
-                        selectedTime === slot.time
-                          ? 'scale-[1.03] border-sky-300 bg-gradient-to-br from-sky-200/90 to-sage-200/80 text-slate-800 shadow-[0_12px_30px_rgba(61,148,192,0.20)]'
-                          : 'border-white/75 bg-gradient-to-br from-white/88 to-white/50 text-slate-700 shadow-[0_8px_20px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.75)] hover:-translate-y-0.5 hover:border-sky-200 hover:bg-white'
-                      }`}
-                      style={{ transitionDelay: `${index * 25}ms` }}
-                    >
-                      {slot.time}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="w-full rounded-2xl bg-slate-50 px-4 py-4 text-center text-sm font-semibold text-slate-400">
-                {loading ? '...' : t.full}
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
       <form onSubmit={submitBooking} className="grid content-start gap-3 rounded-[1.1rem] border border-sky-100/80 bg-white/90 p-4 shadow-sm sm:p-5">
