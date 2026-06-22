@@ -26,6 +26,25 @@ function multiline(value: unknown, max = 1200) {
   return String(value || '').trim().slice(0, max)
 }
 
+function cleanPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '')
+  let localPart = digits
+
+  if (localPart.startsWith('380')) {
+    localPart = localPart.slice(3)
+  } else if (localPart.startsWith('38')) {
+    localPart = localPart.slice(2)
+  } else if (localPart.startsWith('3')) {
+    localPart = localPart.slice(1)
+  }
+
+  return `+380${localPart.slice(0, 9)}`
+}
+
+function isFullUkrainianPhone(phone: string) {
+  return /^\+380\d{9}$/.test(phone)
+}
+
 function kyivTime(date = new Date()) {
   return new Intl.DateTimeFormat('uk-UA', {
     timeZone: 'Europe/Kiev',
@@ -60,13 +79,14 @@ export async function POST(request: Request) {
   }
 
   const name = clean(payload.name, 120)
-  const phone = clean(payload.phone, 80)
+  const rawPhone = clean(payload.phone, 80)
+  const cleanedPhone = cleanPhone(rawPhone)
   const comment = multiline(payload.comment, 1200)
   const userAgent = clean(payload.device?.userAgent || request.headers.get('user-agent'), 500)
 
-  if (!name || !phone) {
+  if (!name || !isFullUkrainianPhone(cleanedPhone)) {
     return NextResponse.json(
-      { ok: false, error: 'Name and phone are required' },
+      { ok: false, error: 'Name and full Ukrainian phone are required' },
       { status: 400, headers: { 'Cache-Control': 'no-store, max-age=0' } },
     )
   }
@@ -79,18 +99,25 @@ export async function POST(request: Request) {
     'Новая заявка с сайта',
     '',
     `Имя: ${name}`,
-    `Телефон: ${phone}`,
+    `Телефон: ${cleanedPhone}`,
     `Комментарий: ${comment || 'не указан'}`,
     '',
-    `Дата и время: ${kyivTime(safeSubmittedDate)} Киев`,
-    `Страница: ${clean(payload.page || '/', 180)}`,
-    `Устройство: ${userAgent || 'не определено'}`,
-    `Платформа: ${clean(device.platform, 120) || 'не определено'}`,
+    `Дата и время: ${kyivTime(safeSubmittedDate)} (Kyiv time)`,
     `Язык: ${clean(device.language, 80) || 'не определено'}`,
-    `Часовой пояс: ${clean(device.timezone, 120) || 'не определено'}`,
-    `Экран: ${clean(device.viewport, 80) || 'не определено'}`,
   ].join('\n')
 
+  const keyboard = {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: "Написать в Telegram",
+            url: `https://t.me/${cleanedPhone}` 
+          }
+        ]
+      ]
+    }
+  };
   const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

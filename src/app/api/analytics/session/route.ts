@@ -46,12 +46,8 @@ async function notifyTelegram(payload: AnalyticsPayload, readScore: number) {
 
   const text = [
     'Новые просмотры сайта:',
-    `Source: ${payload.source || 'site'}`,
-    `Path: ${payload.lastPath || payload.entryPath || '/'}`,
-    `Returning: ${payload.isReturning ? 'yes' : 'no'}`,
-    `Time: ${payload.durationSeconds || 0}s`,
-    `Scroll: ${payload.maxScrollDepth || 0}%`,
-    `Read score: ${readScore}%`,
+    `Устроиство: ${payload.source || 'Персональный компьютер'}`,
+    `Сайт: ${payload.lastPath || payload.entryPath || 'Партфолио'}`,
   ].join('\n')
 
   await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {

@@ -104,7 +104,7 @@ export default function ContactSection() {
   const t = copy[lang]
   const sectionRef = useRef<HTMLDivElement>(null)
   const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
+  const [phone, setPhone] = useState('+380')
   const [comment, setComment] = useState('')
   const [sending, setSending] = useState(false)
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
@@ -165,9 +165,31 @@ export default function ContactSection() {
     return () => ctx.revert()
   }, [])
 
+  const formatPhoneInput = (value: string): string => {
+    const digits = value.replace(/\D/g, '')
+    let localPart = digits
+
+    if (localPart.startsWith('380')) {
+      localPart = localPart.substring(3)
+    } else if (localPart.startsWith('38')) {
+      localPart = localPart.substring(2)
+    } else if (localPart.startsWith('3')) {
+      localPart = localPart.substring(1)
+    }
+
+    localPart = localPart.substring(0, 9)
+
+    return `+380${localPart}`
+  }
+
   const submitContact = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (sending) return
+
+    if (phone.replace(/\D/g, '').length !== 12) {
+      setStatus('error')
+      return
+    }
 
     setSending(true)
     setStatus('idle')
@@ -195,7 +217,7 @@ export default function ContactSection() {
 
     if (response?.ok) {
       setName('')
-      setPhone('')
+      setPhone('+380')
       setComment('')
       setStatus('success')
       return
@@ -242,10 +264,14 @@ export default function ContactSection() {
               <span className="mb-2 block text-sm font-semibold text-slate-700">{t.formPhone}</span>
               <input
                 value={phone}
-                onChange={(event) => setPhone(event.target.value)}
+                onChange={(event) => setPhone(formatPhoneInput(event.target.value))}
+                onFocus={() => setPhone((current) => current || '+380')}
                 required
                 type="tel"
+                inputMode="numeric"
                 autoComplete="tel"
+                pattern="\+380\d{9}"
+                placeholder="+380XXXXXXXXX"
                 className="min-h-12 w-full rounded-2xl border border-sky-100 bg-white/86 px-4 text-base text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-sky-300"
               />
             </label>
