@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import AnalyticsTracker from '@/components/AnalyticsTracker'
+import BookingSettingsPanel from '@/components/BookingSettingsPanel'
 import MiniAppHeader from '@/components/MiniAppHeader'
 import { useI18n, type Lang } from '@/i18n'
 
@@ -167,6 +168,7 @@ export default function BotMiniApp() {
             <Bar label={t.miniapp} value={summary.miniapp} total={summary.total} />
           </div>
         </div>
+        <BookingSettingsPanel />
       </section>
     </main>
   )

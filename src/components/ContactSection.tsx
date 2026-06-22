@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import BookingWidget from '@/components/BookingWidget'
 import { useI18n, type Lang } from '@/i18n'
 
 const copy: Record<Lang, {
@@ -243,6 +244,8 @@ export default function ContactSection() {
             {t.intro}
           </p>
         </div>
+
+        <BookingWidget />
 
         <form
           onSubmit={submitContact}

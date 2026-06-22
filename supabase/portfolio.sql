@@ -278,3 +278,203 @@ for update
 to anon, authenticated
 using (true)
 with check (true);
+
+create table if not exists public.booking_settings (
+  id text primary key default 'default',
+  slot_minutes integer not null default 60,
+  working_hours jsonb not null default '{
+    "0": {"enabled": false, "start": "09:00", "end": "18:00"},
+    "1": {"enabled": true, "start": "09:00", "end": "18:00"},
+    "2": {"enabled": true, "start": "09:00", "end": "18:00"},
+    "3": {"enabled": true, "start": "09:00", "end": "18:00"},
+    "4": {"enabled": true, "start": "09:00", "end": "18:00"},
+    "5": {"enabled": true, "start": "09:00", "end": "18:00"},
+    "6": {"enabled": true, "start": "10:00", "end": "15:00"}
+  }'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists booking_settings_set_updated_at on public.booking_settings;
+
+create trigger booking_settings_set_updated_at
+before update on public.booking_settings
+for each row
+execute function public.set_updated_at();
+
+alter table public.booking_settings enable row level security;
+
+drop policy if exists "booking_settings_select_all" on public.booking_settings;
+drop policy if exists "booking_settings_insert_all" on public.booking_settings;
+drop policy if exists "booking_settings_update_all" on public.booking_settings;
+
+create policy "booking_settings_select_all"
+on public.booking_settings
+for select
+to anon, authenticated
+using (true);
+
+create policy "booking_settings_insert_all"
+on public.booking_settings
+for insert
+to anon, authenticated
+with check (true);
+
+create policy "booking_settings_update_all"
+on public.booking_settings
+for update
+to anon, authenticated
+using (true)
+with check (true);
+
+insert into public.booking_settings (id)
+values ('default')
+on conflict (id) do nothing;
+
+create table if not exists public.booking_day_overrides (
+  date date primary key,
+  closed boolean not null default false,
+  start_time text,
+  end_time text,
+  note text,
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists booking_day_overrides_set_updated_at on public.booking_day_overrides;
+
+create trigger booking_day_overrides_set_updated_at
+before update on public.booking_day_overrides
+for each row
+execute function public.set_updated_at();
+
+alter table public.booking_day_overrides enable row level security;
+
+drop policy if exists "booking_day_overrides_select_all" on public.booking_day_overrides;
+drop policy if exists "booking_day_overrides_insert_all" on public.booking_day_overrides;
+drop policy if exists "booking_day_overrides_update_all" on public.booking_day_overrides;
+drop policy if exists "booking_day_overrides_delete_all" on public.booking_day_overrides;
+
+create policy "booking_day_overrides_select_all"
+on public.booking_day_overrides
+for select
+to anon, authenticated
+using (true);
+
+create policy "booking_day_overrides_insert_all"
+on public.booking_day_overrides
+for insert
+to anon, authenticated
+with check (true);
+
+create policy "booking_day_overrides_update_all"
+on public.booking_day_overrides
+for update
+to anon, authenticated
+using (true)
+with check (true);
+
+create policy "booking_day_overrides_delete_all"
+on public.booking_day_overrides
+for delete
+to anon, authenticated
+using (true);
+
+create table if not exists public.booking_week_settings (
+  week_start date primary key,
+  city text,
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists booking_week_settings_set_updated_at on public.booking_week_settings;
+
+create trigger booking_week_settings_set_updated_at
+before update on public.booking_week_settings
+for each row
+execute function public.set_updated_at();
+
+alter table public.booking_week_settings enable row level security;
+
+drop policy if exists "booking_week_settings_select_all" on public.booking_week_settings;
+drop policy if exists "booking_week_settings_insert_all" on public.booking_week_settings;
+drop policy if exists "booking_week_settings_update_all" on public.booking_week_settings;
+drop policy if exists "booking_week_settings_delete_all" on public.booking_week_settings;
+
+create policy "booking_week_settings_select_all"
+on public.booking_week_settings
+for select
+to anon, authenticated
+using (true);
+
+create policy "booking_week_settings_insert_all"
+on public.booking_week_settings
+for insert
+to anon, authenticated
+with check (true);
+
+create policy "booking_week_settings_update_all"
+on public.booking_week_settings
+for update
+to anon, authenticated
+using (true)
+with check (true);
+
+create policy "booking_week_settings_delete_all"
+on public.booking_week_settings
+for delete
+to anon, authenticated
+using (true);
+
+create table if not exists public.booking_appointments (
+  id uuid primary key default gen_random_uuid(),
+  date date not null,
+  time text not null,
+  name text not null,
+  phone text not null,
+  comment text,
+  status text not null default 'booked',
+  client jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists booking_appointments_booked_slot_key
+on public.booking_appointments (date, time)
+where status = 'booked';
+
+drop trigger if exists booking_appointments_set_updated_at on public.booking_appointments;
+
+create trigger booking_appointments_set_updated_at
+before update on public.booking_appointments
+for each row
+execute function public.set_updated_at();
+
+alter table public.booking_appointments enable row level security;
+
+drop policy if exists "booking_appointments_select_all" on public.booking_appointments;
+drop policy if exists "booking_appointments_insert_all" on public.booking_appointments;
+drop policy if exists "booking_appointments_update_all" on public.booking_appointments;
+drop policy if exists "booking_appointments_delete_all" on public.booking_appointments;
+
+create policy "booking_appointments_select_all"
+on public.booking_appointments
+for select
+to anon, authenticated
+using (true);
+
+create policy "booking_appointments_insert_all"
+on public.booking_appointments
+for insert
+to anon, authenticated
+with check (true);
+
+create policy "booking_appointments_update_all"
+on public.booking_appointments
+for update
+to anon, authenticated
+using (true)
+with check (true);
+
+create policy "booking_appointments_delete_all"
+on public.booking_appointments
+for delete
+to anon, authenticated
+using (true);
