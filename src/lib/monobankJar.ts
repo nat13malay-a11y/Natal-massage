@@ -15,6 +15,8 @@ export function getJarPaymentConfig() {
     process.env.MONOBANK_PERSONAL_TOKEN ||
     process.env.MONOBANK_TOKEN ||
     process.env.MONO_TOKEN ||
+    process.env.MONO_PERSONAL_TOKEN ||
+    process.env.X_TOKEN ||
     process.env.monobank_personal_token ||
     process.env.monobank_token ||
     ''
@@ -22,23 +24,41 @@ export function getJarPaymentConfig() {
     process.env.MONOBANK_JAR_ID ||
     process.env.MONOBANK_BANKA_ID ||
     process.env.MONO_JAR_ID ||
+    process.env.MONO_BANKA_ID ||
     process.env.BANKA_JAR_ID ||
+    process.env.JAR_ID ||
+    process.env.BANKA_ID ||
     process.env.monobank_jar_id ||
     ''
   const jarSendId =
     process.env.MONOBANK_JAR_SEND_ID ||
     process.env.MONOBANK_BANKA_SEND_ID ||
     process.env.MONO_JAR_SEND_ID ||
+    process.env.MONO_BANKA_SEND_ID ||
     process.env.BANKA_SEND_ID ||
+    process.env.SEND_ID ||
+    process.env.JAR_SEND_ID ||
     process.env.monobank_jar_send_id ||
     ''
   const jarUrl =
     process.env.MONOBANK_JAR_URL ||
     process.env.MONOBANK_BANKA_URL ||
+    process.env.MONO_JAR_URL ||
+    process.env.MONO_BANKA_URL ||
     process.env.BANKA_URL ||
+    process.env.JAR_URL ||
     (jarSendId ? `https://send.monobank.ua/jar/${jarSendId}` : '')
 
   return { token, jarId, jarSendId, jarUrl }
+}
+
+export function missingJarPaymentConfig() {
+  const config = getJarPaymentConfig()
+  const missing: string[] = []
+  if (!config.token) missing.push('MONOBANK_PERSONAL_TOKEN')
+  if (!config.jarId) missing.push('MONOBANK_JAR_ID')
+  if (!config.jarUrl) missing.push('MONOBANK_JAR_URL or MONOBANK_JAR_SEND_ID')
+  return missing
 }
 
 export function depositAmountKopiykas() {

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { addDays, displayWeekStart, generateAvailability, todayKyiv, type BookingAppointment, type BookingOverride, type BookingWeekSetting } from '@/lib/booking'
-import { depositAmountKopiykas, getJarPaymentConfig } from '@/lib/monobankJar'
+import { depositAmountKopiykas, getJarPaymentConfig, missingJarPaymentConfig } from '@/lib/monobankJar'
 import { supabase } from '@/lib/supabaseClient'
 
 export const dynamic = 'force-dynamic'
@@ -83,7 +83,10 @@ export async function POST(request: Request) {
   }
 
   if (!jarConfig.token || !jarConfig.jarId || !jarConfig.jarUrl) {
-    return NextResponse.json({ ok: false, error: 'Monobank jar payment is not configured' }, noStore(503))
+    return NextResponse.json({
+      ok: false,
+      error: `Monobank jar payment is not configured. Missing: ${missingJarPaymentConfig().join(', ')}`,
+    }, noStore(503))
   }
 
   const start = todayKyiv()
