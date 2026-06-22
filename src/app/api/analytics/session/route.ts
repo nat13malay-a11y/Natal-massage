@@ -45,7 +45,7 @@ async function notifyTelegram(payload: AnalyticsPayload, readScore: number) {
   if (!token || !chatId || !payload.notify) return
 
   const text = [
-    'New site visit',
+    'Новые просмотры сайта:',
     `Source: ${payload.source || 'site'}`,
     `Path: ${payload.lastPath || payload.entryPath || '/'}`,
     `Returning: ${payload.isReturning ? 'yes' : 'no'}`,
