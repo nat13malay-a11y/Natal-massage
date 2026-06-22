@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useI18n, type Lang } from '@/i18n'
@@ -14,6 +14,15 @@ const copy: Record<Lang, {
   emailLabel: string
   visitLabel: string
   visitText: ReactNode
+  formTitle: string
+  formName: string
+  formPhone: string
+  formComment: string
+  formCommentHint: string
+  formSubmit: string
+  formSending: string
+  formSuccess: string
+  formError: string
   social: string
   footerName: string
   rights: string
@@ -28,6 +37,15 @@ const copy: Record<Lang, {
     emailLabel: 'Email',
     visitLabel: 'Прийом',
     visitText: <>Одеса <br/> Білгород-Дністровський <br/> Виїзд в інші міста обговорюється</>,
+    formTitle: 'Зв’язатися зі мною',
+    formName: 'Ім’я',
+    formPhone: 'Номер телефону',
+    formComment: 'Коментар',
+    formCommentHint: 'Опціонально',
+    formSubmit: 'Відправити',
+    formSending: 'Відправляю...',
+    formSuccess: 'Дякую, заявку відправлено.',
+    formError: 'Не вдалося відправити. Спробуйте ще раз або напишіть у Telegram.',
     social: 'Стежте за результатами в соціальних мережах',
     footerName: 'Малай Наталія Борисівна',
     rights: '© 2026 · Нейрометодика і масаж · Усі права захищені',
@@ -42,6 +60,15 @@ const copy: Record<Lang, {
     emailLabel: 'Email',
     visitLabel: 'Приём',
     visitText: <>Одесса <br/> Белгород-Днепровский <br/> Выезд в другие города обсуждается</>,
+    formTitle: 'Связаться со мной',
+    formName: 'Имя',
+    formPhone: 'Номер телефона',
+    formComment: 'Комментарий',
+    formCommentHint: 'Опционально',
+    formSubmit: 'Отправить',
+    formSending: 'Отправляю...',
+    formSuccess: 'Спасибо, заявка отправлена.',
+    formError: 'Не удалось отправить. Попробуйте ещё раз или напишите в Telegram.',
     social: 'Следите за результатами в социальных сетях',
     footerName: 'Малай Наталья Борисовна',
     rights: '© 2026 · Нейрометодика и массаж · Все права защищены',
@@ -56,6 +83,15 @@ const copy: Record<Lang, {
     emailLabel: 'Email',
     visitLabel: 'Appointments',
     visitText: <>Odesa <br/> Bilhorod-Dnistrovskyi <br/> Trips to other cities are discussed individually</>,
+    formTitle: 'Contact me',
+    formName: 'Name',
+    formPhone: 'Phone number',
+    formComment: 'Comment',
+    formCommentHint: 'Optional',
+    formSubmit: 'Send',
+    formSending: 'Sending...',
+    formSuccess: 'Thank you, your request has been sent.',
+    formError: 'Could not send. Please try again or message me on Telegram.',
     social: 'Follow the results on social media',
     footerName: 'Natalia Borysivna Malay',
     rights: '© 2026 · Neuromethod and massage · All rights reserved',
@@ -67,6 +103,11 @@ export default function ContactSection() {
   const { lang } = useI18n()
   const t = copy[lang]
   const sectionRef = useRef<HTMLDivElement>(null)
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [comment, setComment] = useState('')
+  const [sending, setSending] = useState(false)
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
@@ -124,6 +165,45 @@ export default function ContactSection() {
     return () => ctx.revert()
   }, [])
 
+  const submitContact = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (sending) return
+
+    setSending(true)
+    setStatus('idle')
+
+    const response = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        phone,
+        comment,
+        page: window.location.pathname,
+        submittedAt: new Date().toISOString(),
+        device: {
+          userAgent: navigator.userAgent,
+          platform: navigator.platform,
+          language: navigator.language,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          viewport: `${window.innerWidth}x${window.innerHeight}`,
+        },
+      }),
+    }).catch(() => null)
+
+    setSending(false)
+
+    if (response?.ok) {
+      setName('')
+      setPhone('')
+      setComment('')
+      setStatus('success')
+      return
+    }
+
+    setStatus('error')
+  }
+
   return (
     <footer ref={sectionRef} id="contact" className="scroll-cover scroll-cover-contact relative z-30 -mt-8 md:-mt-16 overflow-hidden">
       <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-12 py-16 sm:py-20 lg:py-24 space-y-10 sm:space-y-14 lg:space-y-16">
@@ -141,6 +221,56 @@ export default function ContactSection() {
             {t.intro}
           </p>
         </div>
+
+        <form
+          onSubmit={submitContact}
+          className="contact-card mx-auto grid w-full max-w-3xl gap-4 rounded-[1.5rem] border border-white/70 bg-white/74 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.10)] backdrop-blur-xl sm:p-6"
+        >
+          <h3 className="heading-section text-center text-2xl text-slate-800">{t.formTitle}</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">{t.formName}</span>
+              <input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                required
+                autoComplete="name"
+                className="min-h-12 w-full rounded-2xl border border-sky-100 bg-white/86 px-4 text-base text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-sky-300"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">{t.formPhone}</span>
+              <input
+                value={phone}
+                onChange={(event) => setPhone(event.target.value)}
+                required
+                type="tel"
+                autoComplete="tel"
+                className="min-h-12 w-full rounded-2xl border border-sky-100 bg-white/86 px-4 text-base text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-sky-300"
+              />
+            </label>
+          </div>
+          <label className="block">
+            <span className="mb-2 flex items-center justify-between gap-3 text-sm font-semibold text-slate-700">
+              {t.formComment}
+              <span className="text-xs font-medium uppercase tracking-wide text-slate-400">{t.formCommentHint}</span>
+            </span>
+            <textarea
+              value={comment}
+              onChange={(event) => setComment(event.target.value)}
+              rows={4}
+              className="w-full resize-y rounded-2xl border border-sky-100 bg-white/86 px-4 py-3 text-base leading-relaxed text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-sky-300"
+            />
+          </label>
+          <button type="submit" disabled={sending} className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-70">
+            {sending ? t.formSending : t.formSubmit}
+          </button>
+          {status !== 'idle' && (
+            <p className={`rounded-2xl px-4 py-3 text-center text-sm font-semibold ${status === 'success' ? 'bg-sage-50 text-sage-500' : 'bg-rose-50 text-rose-600'}`}>
+              {status === 'success' ? t.formSuccess : t.formError}
+            </p>
+          )}
+        </form>
 
         {/* Contact cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">

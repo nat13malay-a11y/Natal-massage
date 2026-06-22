@@ -11,7 +11,7 @@ const text: Record<Lang, {
   subtitle: string
   cta: string
   results: string
-  stats: Array<{ value: string; label: string; compact?: boolean }>
+  stats: Array<{ value: string; label: string; pricePrefix?: string }>
   alt: string
   certifiedSmall: string
   certifiedMain: string
@@ -29,7 +29,7 @@ const text: Record<Lang, {
       { value: '15+', label: 'років досвіду' },
       { value: '500+', label: 'пацієнтів' },
       { value: '98%', label: 'результат' },
-      { value: '1ООО₴', label: 'за годину', compact: true },
+      { value: '1000', label: 'за годину', pricePrefix: 'від' },
     ],
     alt: 'Малай Наталія Борисівна — нейрометодика',
     certifiedSmall: 'Сертифікований спеціаліст',
@@ -48,7 +48,7 @@ const text: Record<Lang, {
       { value: '15+', label: 'лет опыта' },
       { value: '500+', label: 'пациентов' },
       { value: '98%', label: 'результат' },
-      { value: '1000₴', label: 'в час', compact: true },
+      { value: '1000', label: 'в час', pricePrefix: 'от' },
     ],
     alt: 'Малай Наталья Борисовна — нейрометодика',
     certifiedSmall: 'Сертифицированный специалист',
@@ -67,7 +67,7 @@ const text: Record<Lang, {
       { value: '15+', label: 'years experience' },
       { value: '500+', label: 'patients' },
       { value: '98%', label: 'result' },
-      { value: '1000₴', label: 'per hour', compact: true },
+      { value: '1000', label: 'per hour', pricePrefix: 'from' },
     ],
     alt: 'Natalia Borysivna Malay — neuromethod',
     certifiedSmall: 'Certified specialist',
@@ -251,10 +251,18 @@ export default function HeroSection() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-1.5 sm:gap-5 pt-4 border-t border-nude-200">
-            {t.stats.map(({ value, label, compact }) => (
-              <div key={label} className="hero-stat text-center">
-                <div className={compact ? 'stat-number stat-number-compact' : 'stat-number'}>{value}</div>
+          <div className="grid grid-cols-4 items-start justify-between gap-1 pt-4 border-t border-nude-200">
+            {t.stats.map(({ value, label, pricePrefix }) => (
+              <div key={label} className="hero-stat flex min-w-0 flex-col items-center text-center">
+                {pricePrefix ? (
+                  <div className="stat-number stat-price" aria-label={`${pricePrefix} ${value} гривень ${label}`}>
+                    <span className="stat-price-prefix">{pricePrefix}</span>
+                    <span className="stat-price-value">{value}</span>
+                    <span className="stat-price-currency">₴</span>
+                  </div>
+                ) : (
+                  <div className="stat-number">{value}</div>
+                )}
                 <div className="text-[0.68rem] sm:text-xs text-slate-600 font-sans mt-1 uppercase">{label}</div>
               </div>
             ))}

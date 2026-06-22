@@ -61,14 +61,14 @@ const emptyText: PortfolioText = {
 
 const defaultCards: PortfolioCard[] = [
   {
-    id: 'sample-cerebral-palsy',
+    id: '11111111-1111-4111-8111-111111111111',
     media: {
       kind: 'image',
       src: '/assets/IMG_1217.gif',
       source: 'url',
       name: 'IMG_1217.gif',
     },
-    createdAt: new Date().toISOString(),
+    createdAt: '2026-06-22T00:03:00.000Z',
     text: {
       uk: {
         tag: 'ДЦП',
@@ -105,6 +105,102 @@ const defaultCards: PortfolioCard[] = [
         metricTwoValue: '100%',
         metricTwoLabel: 'walks alone',
         quote: 'Natalia Borysivna’s method gave us something we were afraid to even dream about',
+      },
+    },
+  },
+  {
+    id: '22222222-2222-4222-8222-222222222222',
+    media: {
+      kind: 'image',
+      src: '/assets/strabismus-result.jpg',
+      source: 'url',
+      name: 'strabismus-result.jpg',
+    },
+    createdAt: '2026-06-22T00:02:00.000Z',
+    text: {
+      uk: {
+        tag: 'Вроджена косоокість',
+        patient: 'Дівчинка, 9 років',
+        title: 'Перемога над косоокістю',
+        description:
+          'Дівчинка з вираженою косоокістю: одне око відхилялося на 30°. Хірургічне лікування не дало результату. Завдяки нейрометодиці вдалося нормалізувати м’язовий тонус ока — косоокість зникла без операції.',
+        metricOneValue: '4',
+        metricOneLabel: 'місяці курсу',
+        metricTwoValue: '0°',
+        metricTwoLabel: 'відхилення',
+        quote: 'Косоокість зникла без повторної операції',
+      },
+      ru: {
+        tag: 'Врождённое косоглазие',
+        patient: 'Девочка, 9 лет',
+        title: 'Победа над косоглазием',
+        description:
+          'Девочка с выраженным косоглазием: один глаз отклонялся на 30°. Хирургическое лечение не дало результата. Благодаря нейрометодике удалось нормализовать мышечный тонус глаза — косоглазие исчезло без операции.',
+        metricOneValue: '4',
+        metricOneLabel: 'месяца курса',
+        metricTwoValue: '0°',
+        metricTwoLabel: 'отклонение',
+        quote: 'Косоглазие исчезло без повторной операции',
+      },
+      en: {
+        tag: 'Congenital strabismus',
+        patient: 'Girl, 9 years old',
+        title: 'Overcoming Strabismus',
+        description:
+          'A girl had pronounced strabismus: one eye deviated by 30 degrees. Surgery did not help. The neuromethod helped normalize eye muscle tone, and the strabismus disappeared without another operation.',
+        metricOneValue: '4',
+        metricOneLabel: 'months of course',
+        metricTwoValue: '0°',
+        metricTwoLabel: 'deviation',
+        quote: 'The strabismus disappeared without another operation',
+      },
+    },
+  },
+  {
+    id: '33333333-3333-4333-8333-333333333333',
+    media: {
+      kind: 'image',
+      src: '/assets/parkinsons-result.jpg',
+      source: 'url',
+      name: 'parkinsons-result.jpg',
+    },
+    createdAt: '2026-06-22T00:01:00.000Z',
+    text: {
+      uk: {
+        tag: 'Хвороба Паркінсона',
+        patient: 'Індивідуальна програма',
+        title: 'Робота з хворобою Паркінсона',
+        description:
+          'При хворобі Паркінсона робота будується через відновлення зв’язку тіла й нервової системи: пальпація, м’який вплив, зниження м’язового напруження та поступове повернення контролю рухів.',
+        metricOneValue: '1:1',
+        metricOneLabel: 'підхід',
+        metricTwoValue: '15+',
+        metricTwoLabel: 'років практики',
+        quote: 'М’яка робота допомагає поступово повертати контроль рухів',
+      },
+      ru: {
+        tag: 'Болезнь Паркинсона',
+        patient: 'Индивидуальная программа',
+        title: 'Работа с болезнью Паркинсона',
+        description:
+          'При болезни Паркинсона работа строится через восстановление связи тела и нервной системы: пальпация, мягкое воздействие, снижение мышечного напряжения и постепенное возвращение контроля движений.',
+        metricOneValue: '1:1',
+        metricOneLabel: 'подход',
+        metricTwoValue: '15+',
+        metricTwoLabel: 'лет практики',
+        quote: 'Мягкая работа помогает постепенно возвращать контроль движений',
+      },
+      en: {
+        tag: 'Parkinson’s disease',
+        patient: 'Individual program',
+        title: 'Working with Parkinson’s Disease',
+        description:
+          'With Parkinson’s disease, the work focuses on restoring the connection between the body and nervous system: palpation, gentle influence, reducing muscle tension, and gradually returning movement control.',
+        metricOneValue: '1:1',
+        metricOneLabel: 'approach',
+        metricTwoValue: '15+',
+        metricTwoLabel: 'years practice',
+        quote: 'Gentle work helps gradually return movement control',
       },
     },
   },
