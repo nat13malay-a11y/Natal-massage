@@ -258,6 +258,7 @@ export default function BookingWidget() {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState('')
   const [openDate, setOpenDate] = useState('')
   const [payment, setPayment] = useState<PaymentState | null>(null)
 
@@ -332,12 +333,14 @@ export default function BookingWidget() {
         })
 
         if (confirmed) {
-          setStatus('success')
-          loadAvailability()
-        } else if (failed) {
-          setStatus('error')
-          loadAvailability()
-        }
+        setStatus('success')
+        setErrorMessage('')
+        loadAvailability()
+      } else if (failed) {
+        setStatus('error')
+        setErrorMessage(data.failureReason || t.paymentFailed)
+        loadAvailability()
+      }
       })
       .catch(() => undefined)
   }, [])
@@ -359,6 +362,7 @@ export default function BookingWidget() {
         setComment('')
         setSelectedTime('')
         setStatus('success')
+        setErrorMessage('')
         loadAvailability()
         return
       }
@@ -366,6 +370,7 @@ export default function BookingWidget() {
       if (['failure', 'expired', 'cancelled', 'reversed'].includes(data.paymentStatus || '') || data.bookingStatus === 'cancelled') {
         setPayment((current) => current?.invoiceId === payment.invoiceId ? { ...current, failed: true, failureReason: data.failureReason } : current)
         setStatus('error')
+        setErrorMessage(data.failureReason || t.paymentFailed)
         loadAvailability()
       }
     }, 3500)
@@ -379,11 +384,13 @@ export default function BookingWidget() {
 
     if (!selectedDate || !selectedTime || phone.replace(/\D/g, '').length !== 12) {
       setStatus('error')
+      setErrorMessage(t.error)
       return
     }
 
     setSending(true)
     setStatus('idle')
+    setErrorMessage('')
 
     const response = await fetch('/api/booking/appointment', {
       method: 'POST',
@@ -418,11 +425,13 @@ export default function BookingWidget() {
         failed: false,
       })
       setStatus('idle')
+      setErrorMessage('')
       loadAvailability()
       return
     }
 
     setStatus('error')
+    setErrorMessage(data?.error || t.error)
   }
 
   return (
@@ -703,6 +712,7 @@ export default function BookingWidget() {
         {status !== 'idle' && (
           <p className={`rounded-2xl px-4 py-3 text-center text-sm font-semibold ${status === 'success' ? 'bg-sage-50 text-sage-500' : 'bg-rose-50 text-rose-600'}`}>
             {status === 'success' ? t.success : t.error}
+            {status === 'error' && errorMessage && errorMessage !== t.error ? ` ${errorMessage}` : ''}
           </p>
         )}
       </form>

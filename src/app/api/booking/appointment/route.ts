@@ -54,6 +54,10 @@ function isFullUkrainianPhone(phone: string) {
   return /^\+380\d{9}$/.test(phone)
 }
 
+function pendingCutoffIso() {
+  return new Date(Date.now() - 35 * 60 * 1000).toISOString()
+}
+
 export async function POST(request: Request) {
   if (!supabase) {
     return NextResponse.json({ ok: false, error: 'Supabase is not configured' }, noStore(503))
@@ -88,6 +92,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'Date is outside the booking window' }, noStore(400))
   }
 
+  await supabase
+    .from('booking_appointments')
+    .update({ status: 'cancelled' })
+    .eq('status', 'pending_payment')
+    .lt('created_at', pendingCutoffIso())
+
   const weekStart = displayWeekStart(date, start)
   const [settingsResult, overridesResult, appointmentsResult, weeksResult] = await Promise.all([
     supabase
@@ -102,10 +112,10 @@ export async function POST(request: Request) {
       .lte('date', end),
     supabase
       .from('booking_appointments')
-      .select('date, time, status')
+      .select('date, time, status, created_at')
       .gte('date', start)
       .lte('date', end)
-      .eq('status', 'booked'),
+      .in('status', ['booked', 'pending_payment']),
     supabase
       .from('booking_week_settings')
       .select('week_start, city')
@@ -133,7 +143,13 @@ export async function POST(request: Request) {
     endTime: item.end_time,
     note: item.note,
   }))
-  const appointments = (appointmentsResult.data || []) as BookingAppointment[]
+  const pendingSince = Date.now() - 35 * 60 * 1000
+  const appointments = (appointmentsResult.data || [])
+    .filter((item: BookingAppointment & { created_at?: string }) => {
+      if (item.status === 'booked') return true
+      const createdAt = item.created_at ? new Date(item.created_at).getTime() : 0
+      return item.status === 'pending_payment' && createdAt > pendingSince
+    }) as BookingAppointment[]
   const weeks = (weeksResult.data || []).map<BookingWeekSetting>((item) => ({
     weekStart: item.week_start,
     city: item.city,
@@ -175,7 +191,11 @@ export async function POST(request: Request) {
     .single()
 
   if (pendingInsert.error) {
-    return NextResponse.json({ ok: false, error: pendingInsert.error.message }, noStore(pendingInsert.error.code === '23505' ? 409 : 500))
+    const duplicate = pendingInsert.error.code === '23505'
+    return NextResponse.json(
+      { ok: false, error: duplicate ? 'This time is waiting for payment or already booked. Choose another time.' : pendingInsert.error.message },
+      noStore(duplicate ? 409 : 500),
+    )
   }
 
   const paymentUrl = `${jarConfig.jarUrl}${jarConfig.jarUrl.includes('?') ? '&' : '?'}booking=${encodeURIComponent(reference)}&amount=${Math.round(amount / 100)}`
