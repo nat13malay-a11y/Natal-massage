@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 type AnalyticsRow = {
   visitor_id: string
   source: string
@@ -29,7 +32,10 @@ function percent(value: number, total: number) {
 
 export async function GET() {
   if (!supabase) {
-    return NextResponse.json({ ok: false, error: 'Supabase is not configured' }, { status: 503 })
+    return NextResponse.json(
+      { ok: false, error: 'Supabase is not configured' },
+      { status: 503, headers: { 'Cache-Control': 'no-store, max-age=0' } },
+    )
   }
 
   let data: unknown[] | null = null
@@ -40,6 +46,7 @@ export async function GET() {
       supabase
         .from('site_analytics_sessions')
         .select('visitor_id, source, duration_seconds, page_views, max_scroll_depth, is_returning, read_score, accidental, started_at')
+        .not('id', 'like', 'debug-%')
         .order('started_at', { ascending: false })
         .limit(2000),
     ))
@@ -50,7 +57,10 @@ export async function GET() {
   }
 
   if (error) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+    return NextResponse.json(
+      { ok: false, error: error.message },
+      { status: 500, headers: { 'Cache-Control': 'no-store, max-age=0' } },
+    )
   }
 
   const rows = (data || []) as AnalyticsRow[]
@@ -64,19 +74,22 @@ export async function GET() {
   const avgReadScore = total ? Math.round(rows.reduce((sum, row) => sum + (row.read_score || 0), 0) / total) : 0
   const uniqueVisitors = new Set(rows.map((row) => row.visitor_id)).size
 
-  return NextResponse.json({
-    ok: true,
-    total,
-    uniqueVisitors,
-    returning,
-    returningPercent: percent(returning, total),
-    readers,
-    readersPercent: percent(readers, total),
-    accidental,
-    accidentalPercent: percent(accidental, total),
-    site,
-    miniapp,
-    avgDuration,
-    avgReadScore,
-  })
+  return NextResponse.json(
+    {
+      ok: true,
+      total,
+      uniqueVisitors,
+      returning,
+      returningPercent: percent(returning, total),
+      readers,
+      readersPercent: percent(readers, total),
+      accidental,
+      accidentalPercent: percent(accidental, total),
+      site,
+      miniapp,
+      avgDuration,
+      avgReadScore,
+    },
+    { headers: { 'Cache-Control': 'no-store, max-age=0' } },
+  )
 }

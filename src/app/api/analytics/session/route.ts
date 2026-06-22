@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 type AnalyticsPayload = {
   id: string
   visitorId: string
@@ -37,8 +40,8 @@ function score(payload: AnalyticsPayload) {
 }
 
 async function notifyTelegram(payload: AnalyticsPayload, readScore: number) {
-  const token = process.env.TELEGRAM_BOT_TOKEN
-  const chatId = process.env.TELEGRAM_CHAT_ID
+  const token = process.env.TELEGRAM_BOT_TOKEN || process.env.telegram_bot_token
+  const chatId = process.env.TELEGRAM_CHAT_ID || process.env.telegram_chat_id
   if (!token || !chatId || !payload.notify) return
 
   const text = [
@@ -60,23 +63,35 @@ async function notifyTelegram(payload: AnalyticsPayload, readScore: number) {
 
 export async function POST(request: Request) {
   if (!supabase) {
-    return NextResponse.json({ ok: false, mode: 'local' }, { status: 503 })
+    return NextResponse.json(
+      { ok: false, mode: 'local' },
+      { status: 503, headers: { 'Cache-Control': 'no-store, max-age=0' } },
+    )
   }
 
   const rawBody = await request.text()
   if (!rawBody) {
-    return NextResponse.json({ ok: false, skipped: true }, { status: 202 })
+    return NextResponse.json(
+      { ok: false, skipped: true },
+      { status: 202, headers: { 'Cache-Control': 'no-store, max-age=0' } },
+    )
   }
 
   let payload: AnalyticsPayload
   try {
     payload = JSON.parse(rawBody) as AnalyticsPayload
   } catch {
-    return NextResponse.json({ ok: false, skipped: true }, { status: 202 })
+    return NextResponse.json(
+      { ok: false, skipped: true },
+      { status: 202, headers: { 'Cache-Control': 'no-store, max-age=0' } },
+    )
   }
 
   if (!payload.id || !payload.visitorId) {
-    return NextResponse.json({ ok: false, error: 'Missing session id or visitor id' }, { status: 400 })
+    return NextResponse.json(
+      { ok: false, error: 'Missing session id or visitor id' },
+      { status: 400, headers: { 'Cache-Control': 'no-store, max-age=0' } },
+    )
   }
 
   const readScore = score(payload)
@@ -116,10 +131,16 @@ export async function POST(request: Request) {
   }
 
   if (error) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+    return NextResponse.json(
+      { ok: false, error: error.message },
+      { status: 500, headers: { 'Cache-Control': 'no-store, max-age=0' } },
+    )
   }
 
   await notifyTelegram(payload, readScore)
 
-  return NextResponse.json({ ok: true, readScore, accidental })
+  return NextResponse.json(
+    { ok: true, readScore, accidental },
+    { headers: { 'Cache-Control': 'no-store, max-age=0' } },
+  )
 }

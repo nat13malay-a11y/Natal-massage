@@ -119,7 +119,7 @@ export default function BotMiniApp() {
 
   useEffect(() => {
     const load = async () => {
-      const response = await fetch('/api/analytics/summary').catch(() => null)
+      const response = await fetch('/api/analytics/summary', { cache: 'no-store' }).catch(() => null)
       if (response?.ok) {
         const data = await response.json()
         setSummary({ ...emptySummary, ...data })
@@ -127,6 +127,9 @@ export default function BotMiniApp() {
     }
 
     load()
+    const interval = window.setInterval(load, 10000)
+
+    return () => window.clearInterval(interval)
   }, [])
 
   const stats = useMemo(
