@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { type BookingDay } from '@/lib/booking'
 import { useI18n, type Lang } from '@/i18n'
 
@@ -261,6 +262,7 @@ export default function BookingWidget() {
   const [errorMessage, setErrorMessage] = useState('')
   const [openDate, setOpenDate] = useState('')
   const [payment, setPayment] = useState<PaymentState | null>(null)
+  const [mounted, setMounted] = useState(false)
 
   const weekRows = useMemo(() => {
     const rows: BookingDay[][] = []
@@ -303,6 +305,10 @@ export default function BookingWidget() {
     setSelectedTime('')
     setOpenDate('')
   }
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     loadAvailability()
@@ -434,18 +440,17 @@ export default function BookingWidget() {
     setErrorMessage(data?.error || t.error)
   }
 
-  return (
-    <section className="contact-card mx-auto grid w-full max-w-6xl gap-4 rounded-[1.6rem] border border-white/75 bg-white/86 p-4 shadow-[0_22px_64px_rgba(15,23,42,0.09)] backdrop-blur-xl sm:p-5 lg:grid-cols-[minmax(0,1.18fr)_22rem] lg:gap-5">
-      {payment && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/34 px-4 py-6 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[1.5rem] border border-white/80 bg-white/94 p-5 text-center shadow-[0_28px_90px_rgba(15,23,42,0.22)] backdrop-blur-xl sm:p-6">
+  const paymentModal = mounted && payment
+    ? createPortal(
+        <div className="fixed inset-0 z-[9999] flex min-h-[100svh] items-center justify-center overflow-y-auto overscroll-contain bg-black/80 px-4 py-6">
+          <div role="dialog" aria-modal="true" className="max-h-[calc(100svh-2rem)] w-full max-w-md overflow-y-auto rounded-[1.5rem] border border-white bg-white p-5 text-center shadow-[0_28px_90px_rgba(15,23,42,0.34)] sm:p-6">
             <p className="text-xs font-black uppercase tracking-[0.16em] text-sky-600">{Math.round(payment.amount / 100)} грн</p>
             <h3 className="heading-section mt-2 text-2xl leading-tight text-slate-800">{t.paymentTitle}</h3>
             <p className="mt-3 text-sm leading-relaxed text-slate-600">{t.paymentIntro}</p>
 
             {!payment.confirmed && !payment.failed && (
               <>
-                <div className="mt-5 hidden rounded-[1.25rem] border border-sky-100 bg-white p-4 shadow-inner sm:block">
+                <div className="mt-5 hidden rounded-[1.25rem] border border-sky-200 bg-white p-4 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_16px_44px_rgba(15,23,42,0.10)] sm:block">
                   <img
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(payment.pageUrl)}`}
                     alt="Monobank payment QR"
@@ -479,14 +484,20 @@ export default function BookingWidget() {
             <button
               type="button"
               onClick={() => setPayment(null)}
-              className="mt-4 min-h-11 w-full rounded-2xl border border-sky-100 bg-white/86 px-4 text-sm font-black text-slate-600 transition-colors hover:bg-sky-50"
+              className="mt-4 min-h-11 w-full rounded-2xl border border-sky-200 bg-white px-4 text-sm font-black text-slate-700 shadow-sm transition-colors hover:bg-sky-50"
             >
               {t.paymentClose}
             </button>
           </div>
-        </div>
-      )}
+        </div>,
+        document.body,
+      )
+    : null
 
+  return (
+    <>
+      {paymentModal}
+      <section className="contact-card mx-auto grid w-full max-w-6xl gap-4 rounded-[1.6rem] border border-white/75 bg-white/86 p-4 shadow-[0_22px_64px_rgba(15,23,42,0.09)] backdrop-blur-xl sm:p-5 lg:grid-cols-[minmax(0,1.18fr)_22rem] lg:gap-5">
       <div className="relative overflow-visible rounded-[1.5rem] border border-white/70 bg-[radial-gradient(circle_at_18%_12%,rgba(125,211,252,0.26),transparent_34%),radial-gradient(circle_at_86%_78%,rgba(141,203,188,0.22),transparent_36%),linear-gradient(145deg,rgba(255,255,255,0.88),rgba(236,254,255,0.62))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] sm:p-5">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -615,7 +626,7 @@ export default function BookingWidget() {
                             const total = daySlots.length
                             const angle = -90 + (360 / total) * index
                             const visible = open
-                            const radius = 'clamp(3.35rem, 14vw, 5.5rem)'
+                            const radius = 'clamp(3.8rem, 16vw, 6rem)'
                             const transform = visible
                               ? `translate(-50%, -50%) rotate(${angle}deg) translateX(${radius}) rotate(${-angle}deg) scale(1)`
                               : `translate(-50%, -50%) rotate(${angle}deg) translateX(0) rotate(${-angle}deg) scale(0.4)`
@@ -630,10 +641,10 @@ export default function BookingWidget() {
                                   setOpenDate('')
                                   setStatus('idle')
                                 }}
-                                className={`absolute left-1/2 top-1/2 z-[80] h-8 w-[3.4rem] rounded-xl border text-[10px] font-black backdrop-blur-[16px] transition-[opacity,transform,background-color,border-color,box-shadow] duration-500 sm:h-[38px] sm:w-16 sm:rounded-[0.9rem] sm:text-xs ${
+                                className={`absolute left-1/2 top-1/2 z-[80] h-10 w-16 rounded-[0.95rem] border text-xs font-black transition-[opacity,transform,background-color,border-color,box-shadow] duration-500 focus-visible:outline focus-visible:outline-4 focus-visible:outline-sky-200 sm:h-11 sm:w-20 sm:rounded-2xl sm:text-sm ${
                                   selectedDate === day.date && selectedTime === slot.time
-                                    ? 'border-sky-300 bg-gradient-to-br from-sky-200/95 to-sage-200/90 text-slate-800 shadow-[0_18px_48px_rgba(61,148,192,0.32),0_0_30px_rgba(99,176,216,0.20),inset_0_1px_0_rgba(255,255,255,0.72)]'
-                                    : 'border-white/92 bg-gradient-to-br from-white/98 to-white/74 text-slate-800 shadow-[0_20px_52px_rgba(15,23,42,0.24),0_0_22px_rgba(255,255,255,0.82),inset_0_1px_0_rgba(255,255,255,0.82)] hover:border-sky-300 hover:bg-white hover:shadow-[0_24px_62px_rgba(61,148,192,0.28),0_0_30px_rgba(99,176,216,0.18)]'
+                                    ? 'border-sky-500 bg-gradient-to-br from-sky-500 to-sage-500 text-white shadow-[0_20px_52px_rgba(61,148,192,0.40),0_0_0_3px_rgba(255,255,255,0.96),inset_0_1px_0_rgba(255,255,255,0.34)]'
+                                    : 'border-sky-200 bg-white text-slate-900 shadow-[0_18px_44px_rgba(15,23,42,0.26),0_0_0_3px_rgba(255,255,255,0.96),inset_0_1px_0_rgba(255,255,255,0.92)] hover:border-sky-500 hover:bg-sky-50 hover:text-slate-950 hover:shadow-[0_24px_62px_rgba(61,148,192,0.30),0_0_0_3px_rgba(255,255,255,1)]'
                                 }`}
                                 style={{
                                   opacity: visible ? 1 : 0,
@@ -716,6 +727,7 @@ export default function BookingWidget() {
           </p>
         )}
       </form>
-    </section>
+      </section>
+    </>
   )
 }
