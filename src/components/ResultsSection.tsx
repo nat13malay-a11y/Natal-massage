@@ -1,10 +1,28 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useI18n, type Lang } from '@/i18n'
+
+type PortfolioText = {
+  tag?: string
+  patient?: string
+  title?: string
+  description?: string
+  metricOneValue?: string
+  metricOneLabel?: string
+  metricTwoValue?: string
+  metricTwoLabel?: string
+  quote?: string
+}
+
+type PortfolioRow = {
+  id: string
+  media?: { kind?: string; src?: string }
+  text?: Record<Lang, PortfolioText>
+}
 
 const cases = [
   {
@@ -180,6 +198,75 @@ export default function ResultsSection() {
   const { lang } = useI18n()
   const t = copy[lang]
   const sectionRef = useRef<HTMLDivElement>(null)
+  const [portfolioRows, setPortfolioRows] = useState<PortfolioRow[] | null>(null)
+
+  useEffect(() => {
+    let active = true
+
+    const loadCards = async () => {
+      const response = await fetch('/api/portfolio/cards', { cache: 'no-store' }).catch(() => null)
+      const payload = response?.ok ? await response.json().catch(() => null) : null
+      if (active && payload?.ok && Array.isArray(payload.cards) && payload.cards.length > 0) {
+        setPortfolioRows(payload.cards as PortfolioRow[])
+      }
+    }
+
+    loadCards()
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const caseItems = useMemo(() => {
+    if (portfolioRows?.length) {
+      const colors = [
+        'bg-sky-100 text-sky-700',
+        'bg-sage-100 text-sage-700',
+        'bg-nude-100 text-nude-700',
+      ]
+
+      return portfolioRows.map((row, index) => {
+        const content = row.text?.[lang]?.title || row.text?.[lang]?.description
+          ? row.text[lang]
+          : row.text?.uk?.title || row.text?.uk?.description
+            ? row.text.uk
+            : row.text?.ru || {}
+
+        return {
+          id: row.id,
+          image: row.media?.src || cases[index % cases.length]?.image || '/assets/massage-result.jpg',
+          mediaKind: row.media?.kind || 'image',
+          tagColor: colors[index % colors.length],
+          tag: content.tag || '',
+          heading: content.title || t.title,
+          patient: content.patient || '',
+          text: content.description || '',
+          metrics: [
+            { value: content.metricOneValue || '', label: content.metricOneLabel || '' },
+            { value: content.metricTwoValue || '', label: content.metricTwoLabel || '' },
+          ].filter((metric) => metric.value || metric.label),
+          quote: content.quote || t.quote,
+        }
+      })
+    }
+
+    return cases.map((item, index) => {
+      const translatedCase = t.cases[index]
+      return {
+        id: item.id,
+        image: item.image,
+        mediaKind: 'image',
+        tagColor: item.tagColor,
+        tag: translatedCase.tag,
+        heading: translatedCase.heading,
+        patient: translatedCase.patient,
+        text: translatedCase.text,
+        metrics: translatedCase.metrics,
+        quote: t.quote,
+      }
+    })
+  }, [lang, portfolioRows, t])
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
@@ -289,9 +376,7 @@ export default function ResultsSection() {
 
         {/* Case cards */}
         <div className="space-y-12">
-          {cases.map((c, i) => {
-            const translatedCase = t.cases[i]
-            return (
+          {caseItems.map((c, i) => (
             <div
               key={c.id}
               id={c.id}
@@ -301,19 +386,27 @@ export default function ResultsSection() {
             >
               {/* Photo */}
               <div className="case-photo relative md:w-2/5 min-h-[230px] sm:min-h-[280px]">
-                <Image
-                  src={c.image}
-                  alt={translatedCase.heading}
-                  fill
-                  unoptimized={c.image.endsWith('.gif')}
-                  style={{ objectFit: 'cover', objectPosition: 'center' }}
-                  sizes="(max-width: 768px) 100vw, 40vw"
-                />
+                {c.mediaKind === 'video' ? (
+                  <video className="h-full w-full object-cover" src={c.image} controls playsInline>
+                    <track kind="captions" />
+                  </video>
+                ) : c.image.startsWith('/') ? (
+                  <Image
+                    src={c.image}
+                    alt={c.heading}
+                    fill
+                    unoptimized={c.image.endsWith('.gif')}
+                    style={{ objectFit: 'cover', objectPosition: 'center' }}
+                    sizes="(max-width: 768px) 100vw, 40vw"
+                  />
+                ) : (
+                  <img className="h-full w-full object-cover" src={c.image} alt={c.heading} />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent" />
                 {/* Tag */}
                 <div className="absolute top-5 left-5">
                   <span className={`${c.tagColor} text-xs font-bold px-3 py-1.5 rounded-full font-sans`}>
-                    {translatedCase.tag}
+                    {c.tag}
                   </span>
                 </div>
               </div>
@@ -321,15 +414,15 @@ export default function ResultsSection() {
               {/* Content */}
               <div className="md:w-3/5 p-5 sm:p-8 lg:p-12 flex flex-col justify-center space-y-5 sm:space-y-6 bg-white">
                 <div>
-                  <p className="text-xs text-slate-500 font-sans uppercase mb-2">{translatedCase.patient}</p>
-                  <h3 className="heading-section text-slate-800 text-2xl lg:text-3xl">{translatedCase.heading}</h3>
+                  <p className="text-xs text-slate-500 font-sans uppercase mb-2">{c.patient}</p>
+                  <h3 className="heading-section text-slate-800 text-2xl lg:text-3xl">{c.heading}</h3>
                 </div>
 
-                <p className="text-slate-600 leading-relaxed font-sans">{translatedCase.text}</p>
+                <p className="text-slate-600 leading-relaxed font-sans">{c.text}</p>
 
                 {/* Metrics */}
                 <div className="grid grid-cols-2 gap-5 sm:flex sm:gap-8 pt-2 border-t border-slate-100">
-                  {translatedCase.metrics.map(({ value, label }) => (
+                  {c.metrics.map(({ value, label }) => (
                     <div key={label}>
                       <div className="stat-number" style={{ fontSize: '2rem' }}>{value}</div>
                       <div className="text-[0.68rem] sm:text-xs text-slate-600 font-sans uppercase mt-1">{label}</div>
@@ -344,12 +437,12 @@ export default function ResultsSection() {
                     <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z" fill="currentColor"/>
                   </svg>
                   <p className="text-slate-600 text-sm italic font-sans leading-relaxed">
-                    {t.quote}
+                    {c.quote}
                   </p>
                 </div>
               </div>
             </div>
-          )})}
+          ))}
         </div>
 
         {/* Additional cases mention */}

@@ -454,13 +454,11 @@ export default function PortfolioManager() {
 
     const loadCards = async () => {
       if (isSupabaseConfigured && supabase) {
-        const { data, error } = await supabase
-          .from('portfolio_cards')
-          .select('id, media, text, created_at')
-          .order('created_at', { ascending: false })
+        const response = await fetch('/api/portfolio/cards', { cache: 'no-store' }).catch(() => null)
+        const payload = response?.ok ? await response.json().catch(() => null) : null
 
-        if (!error && active) {
-          const nextCards = data?.length ? (data as PortfolioRow[]).map(rowToCard) : defaultCards
+        if (payload?.ok && active) {
+          const nextCards = payload.cards?.length ? (payload.cards as PortfolioRow[]).map(rowToCard) : defaultCards
           setCards(nextCards)
           setUseCloud(true)
           setStatus(t.loadedCloud)
@@ -502,21 +500,22 @@ export default function PortfolioManager() {
     nextCards: PortfolioCard[],
     remote?: { type: 'upsert'; card: PortfolioCard } | { type: 'delete'; id: string },
   ) => {
-    if (supabase && useCloud && remote?.type === 'upsert') {
-      const { error } = await supabase
-        .from('portfolio_cards')
-        .upsert(cardToRow(remote.card), { onConflict: 'id' })
+    if (useCloud && remote?.type === 'upsert') {
+      const response = await fetch('/api/portfolio/cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cardToRow(remote.card)),
+      })
 
-      if (error) throw error
+      if (!response.ok) throw new Error('Could not save card')
     }
 
-    if (supabase && useCloud && remote?.type === 'delete') {
-      const { error } = await supabase
-        .from('portfolio_cards')
-        .delete()
-        .eq('id', remote.id)
+    if (useCloud && remote?.type === 'delete') {
+      const response = await fetch(`/api/portfolio/cards?id=${encodeURIComponent(remote.id)}`, {
+        method: 'DELETE',
+      })
 
-      if (error) throw error
+      if (!response.ok) throw new Error('Could not delete card')
     }
 
     window.localStorage.setItem(storageKey, JSON.stringify(nextCards))
