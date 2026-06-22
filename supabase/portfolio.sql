@@ -436,9 +436,11 @@ create table if not exists public.booking_appointments (
   updated_at timestamptz not null default now()
 );
 
-create unique index if not exists booking_appointments_booked_slot_key
+drop index if exists booking_appointments_booked_slot_key;
+
+create unique index if not exists booking_appointments_active_slot_key
 on public.booking_appointments (date, time)
-where status = 'booked';
+where status in ('booked', 'pending_payment');
 
 drop trigger if exists booking_appointments_set_updated_at on public.booking_appointments;
 

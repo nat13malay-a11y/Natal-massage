@@ -52,10 +52,10 @@ export async function GET(request: Request) {
       .order('date', { ascending: true }),
     supabase
       .from('booking_appointments')
-      .select('date, time, status')
+      .select('date, time, status, created_at')
       .gte('date', start)
       .lte('date', end)
-      .eq('status', 'booked'),
+      .in('status', ['booked', 'pending_payment']),
     supabase
       .from('booking_week_settings')
       .select('week_start, city')
@@ -92,7 +92,13 @@ export async function GET(request: Request) {
     endTime: item.end_time,
     note: item.note,
   }))
-  const appointments = (appointmentsResult.data || []) as BookingAppointment[]
+  const pendingSince = Date.now() - 35 * 60 * 1000
+  const appointments = (appointmentsResult.data || [])
+    .filter((item: BookingAppointment & { created_at?: string }) => {
+      if (item.status === 'booked') return true
+      const createdAt = item.created_at ? new Date(item.created_at).getTime() : 0
+      return item.status === 'pending_payment' && createdAt > pendingSince
+    }) as BookingAppointment[]
   const weeks = (weeksResult.data || []).map<BookingWeekSetting>((item) => ({
     weekStart: item.week_start,
     city: item.city,

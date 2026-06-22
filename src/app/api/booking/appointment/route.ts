@@ -22,6 +22,13 @@ type AppointmentPayload = {
   }
 }
 
+type MonoInvoiceResponse = {
+  invoiceId?: string
+  pageUrl?: string
+  errorDescription?: string
+  errText?: string
+}
+
 function noStore(status = 200) {
   return { status, headers: { 'Cache-Control': 'no-store, max-age=0' } }
 }
@@ -53,69 +60,6 @@ function isFullUkrainianPhone(phone: string) {
   return /^\+380\d{9}$/.test(phone)
 }
 
-function kyivTime(date = new Date()) {
-  return new Intl.DateTimeFormat('uk-UA', {
-    timeZone: 'Europe/Kiev',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  }).format(date)
-}
-
-function humanDate(date: string) {
-  const [year, month, day] = date.split('-').map(Number)
-  return new Intl.DateTimeFormat('uk-UA', {
-    timeZone: 'Europe/Kiev',
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-    weekday: 'long',
-  }).format(new Date(Date.UTC(year, month - 1, day)))
-}
-
-async function sendTelegram(payload: AppointmentPayload, cleanedPhone: string) {
-  const token = process.env.TELEGRAM_BOT_TOKEN || process.env.telegram_bot_token
-  const chatId = process.env.TELEGRAM_CHAT_ID || process.env.telegram_chat_id
-
-  if (!token || !chatId) return false
-
-  const submittedDate = payload.submittedAt ? new Date(payload.submittedAt) : new Date()
-  const safeSubmittedDate = Number.isNaN(submittedDate.getTime()) ? new Date() : submittedDate
-  const device = payload.device || {}
-  const userAgent = clean(device.userAgent, 500)
-
-  const message = [
-    'Новая запись на прием',
-    '',
-    `Дата приема: ${payload.date ? humanDate(payload.date) : 'не выбрана'}`,
-    `Время приема: ${payload.time || 'не выбрано'}`,
-    `Город: ${clean(payload.city, 120) || 'не указан'}`,
-    '',
-    `Имя: ${clean(payload.name, 120)}`,
-    `Телефон: ${cleanedPhone}`,
-    `Комментарий: ${multiline(payload.comment, 1200) || 'не указан'}`,
-    '',
-    `Отправлено: ${kyivTime(safeSubmittedDate)} (Kyiv time)`,
-    `Устройство: ${userAgent || clean(device.platform, 120) || 'не определено'}`,
-    `Язык: ${clean(device.language, 80) || 'не определено'}`,
-  ].join('\n')
-
-  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: message,
-      disable_web_page_preview: true,
-    }),
-  }).catch(() => null)
-
-  return Boolean(response?.ok)
-}
-
 export async function POST(request: Request) {
   if (!supabase) {
     return NextResponse.json({ ok: false, error: 'Supabase is not configured' }, noStore(503))
@@ -133,9 +77,16 @@ export async function POST(request: Request) {
   const date = clean(payload.date, 20)
   const time = clean(payload.time, 20)
   const comment = multiline(payload.comment, 1200)
+  const depositAmount = Number(process.env.BOOKING_DEPOSIT_AMOUNT || process.env.booking_deposit_amount || 300)
+  const amount = Math.round((Number.isFinite(depositAmount) ? depositAmount : 300) * 100)
+  const monoToken = process.env.MONOBANK_MERCHANT_TOKEN || process.env.monobank_merchant_token
 
   if (!name || !isFullUkrainianPhone(phone) || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
     return NextResponse.json({ ok: false, error: 'Name, phone, date and time are required' }, noStore(400))
+  }
+
+  if (!monoToken) {
+    return NextResponse.json({ ok: false, error: 'Monobank payment is not configured' }, noStore(503))
   }
 
   const start = todayKyiv()
@@ -170,13 +121,9 @@ export async function POST(request: Request) {
   ])
 
   if (settingsResult.error || overridesResult.error || appointmentsResult.error || weeksResult.error) {
-    const delivered = await sendTelegram({ ...payload, name, phone, date, time, comment }, phone)
-
     return NextResponse.json(
-      delivered
-        ? { ok: true, fallback: true }
-        : { ok: false, error: settingsResult.error?.message || overridesResult.error?.message || appointmentsResult.error?.message || weeksResult.error?.message },
-      noStore(delivered ? 200 : 500),
+      { ok: false, error: settingsResult.error?.message || overridesResult.error?.message || appointmentsResult.error?.message || weeksResult.error?.message },
+      noStore(500),
     )
   }
 
@@ -205,7 +152,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'This time is already booked or unavailable' }, noStore(409))
   }
 
-  const { error } = await supabase
+  const city = day?.city || weeks.find((item) => item.weekStart === weekStart)?.city || null
+  const origin = new URL(request.url).origin
+  const reference = crypto.randomUUID()
+  const submittedAt = payload.submittedAt || new Date().toISOString()
+  const client = {
+    submittedAt,
+    device: payload.device || {},
+    mono: {
+      reference,
+      amount,
+      status: 'creating',
+    },
+  }
+
+  const pendingInsert = await supabase
     .from('booking_appointments')
     .insert({
       date,
@@ -213,19 +174,92 @@ export async function POST(request: Request) {
       name,
       phone,
       comment,
-      status: 'booked',
-      client: {
-        submittedAt: payload.submittedAt || new Date().toISOString(),
-        device: payload.device || {},
-      },
+      status: 'pending_payment',
+      client,
     })
+    .select('id')
+    .single()
 
-  if (error) {
-    return NextResponse.json({ ok: false, error: error.message }, noStore(error.code === '23505' ? 409 : 500))
+  if (pendingInsert.error) {
+    return NextResponse.json({ ok: false, error: pendingInsert.error.message }, noStore(pendingInsert.error.code === '23505' ? 409 : 500))
   }
 
-  const city = day?.city || weeks.find((item) => item.weekStart === weekStart)?.city || null
-  await sendTelegram({ ...payload, name, phone, date, time, city, comment }, phone)
+  const invoiceResponse = await fetch('https://api.monobank.ua/api/merchant/invoice/create', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Token': monoToken,
+      'X-Cms': 'Natalya Massage',
+      'X-Cms-Version': '1.0.0',
+    },
+    body: JSON.stringify({
+      amount,
+      ccy: 980,
+      merchantPaymInfo: {
+        reference,
+        destination: `Задаток за запис ${date} ${time}`,
+        comment: `Задаток за запис ${date} ${time}`,
+        basketOrder: [
+          {
+            name: 'Задаток за прийом',
+            qty: 1,
+            sum: amount,
+            total: amount,
+            unit: 'послуга',
+            code: 'booking-deposit',
+          },
+        ],
+      },
+      redirectUrl: `${origin}/?bookingPayment=${encodeURIComponent(reference)}`,
+      webHookUrl: `${origin}/api/booking/payment/webhook`,
+      validity: 1800,
+      paymentType: 'debit',
+    }),
+  }).catch(() => null)
 
-  return NextResponse.json({ ok: true }, noStore())
+  const invoiceData = invoiceResponse ? (await invoiceResponse.json().catch(() => ({}))) as MonoInvoiceResponse : {}
+
+  if (!invoiceResponse?.ok || !invoiceData.invoiceId || !invoiceData.pageUrl) {
+    await supabase
+      .from('booking_appointments')
+      .update({
+        status: 'cancelled',
+        client: {
+          ...client,
+          mono: {
+            ...client.mono,
+            status: 'invoice_error',
+            error: invoiceData.errorDescription || invoiceData.errText || 'Could not create invoice',
+          },
+        },
+      })
+      .eq('id', pendingInsert.data.id)
+
+    return NextResponse.json({ ok: false, error: invoiceData.errorDescription || invoiceData.errText || 'Could not create payment invoice' }, noStore(502))
+  }
+
+  await supabase
+    .from('booking_appointments')
+    .update({
+      client: {
+        ...client,
+        mono: {
+          ...client.mono,
+          invoiceId: invoiceData.invoiceId,
+          pageUrl: invoiceData.pageUrl,
+          status: 'created',
+        },
+        city,
+      },
+    })
+    .eq('id', pendingInsert.data.id)
+
+  return NextResponse.json({
+    ok: true,
+    paymentRequired: true,
+    invoiceId: invoiceData.invoiceId,
+    pageUrl: invoiceData.pageUrl,
+    amount,
+    reference,
+  }, noStore())
 }

@@ -10,6 +10,24 @@ type AvailabilityResponse = {
   days?: BookingDay[]
 }
 
+type BookingResponse = {
+  ok: boolean
+  paymentRequired?: boolean
+  invoiceId?: string
+  pageUrl?: string
+  amount?: number
+  error?: string
+}
+
+type PaymentState = {
+  invoiceId: string
+  pageUrl: string
+  amount: number
+  confirmed: boolean
+  failed: boolean
+  failureReason?: string
+}
+
 const text: Record<Lang, {
   title: string
   intro: string
@@ -33,6 +51,15 @@ const text: Record<Lang, {
   success: string
   error: string
   unavailable: string
+  paymentTitle: string
+  paymentIntro: string
+  paymentQr: string
+  paymentMobile: string
+  paymentOpen: string
+  paymentWaiting: string
+  paymentConfirmed: string
+  paymentFailed: string
+  paymentClose: string
 }> = {
   uk: {
     title: 'Записатися на прийом',
@@ -54,9 +81,18 @@ const text: Record<Lang, {
     optional: 'Опціонально',
     submit: 'Записатися',
     sending: 'Записую...',
-    success: 'Запис відправлено. Я зв’яжуся з вами для підтвердження.',
+    success: 'Задаток отримано. Запис підтверджено, я отримала повідомлення в Telegram.',
     error: 'Не вдалося записати. Перевірте дані або оберіть інший час.',
     unavailable: 'Онлайн-запис ще налаштовується. Поки можна залишити заявку нижче.',
+    paymentTitle: 'Внесіть задаток',
+    paymentIntro: 'Щоб підтвердити запис, внесіть фіксований задаток. Після зарахування оплати запис підтвердиться автоматично.',
+    paymentQr: 'Відскануйте QR-код камерою або застосунком monobank',
+    paymentMobile: 'На телефоні натисніть кнопку оплати',
+    paymentOpen: 'Оплатити',
+    paymentWaiting: 'Очікую підтвердження оплати...',
+    paymentConfirmed: 'Оплату отримано. Запис підтверджено.',
+    paymentFailed: 'Оплату не завершено. Спробуйте створити запис ще раз.',
+    paymentClose: 'Закрити',
   },
   ru: {
     title: 'Записаться на прием',
@@ -78,9 +114,18 @@ const text: Record<Lang, {
     optional: 'Опционально',
     submit: 'Записаться',
     sending: 'Записываю...',
-    success: 'Запись отправлена. Я свяжусь с вами для подтверждения.',
+    success: 'Задаток получен. Запись подтверждена, я получила уведомление в Telegram.',
     error: 'Не удалось записать. Проверьте данные или выберите другое время.',
     unavailable: 'Онлайн-запись еще настраивается. Пока можно оставить заявку ниже.',
+    paymentTitle: 'Внесите задаток',
+    paymentIntro: 'Чтобы подтвердить запись, внесите фиксированный задаток. После зачисления оплаты запись подтвердится автоматически.',
+    paymentQr: 'Отсканируйте QR-код камерой или приложением monobank',
+    paymentMobile: 'На телефоне нажмите кнопку оплаты',
+    paymentOpen: 'Оплатить',
+    paymentWaiting: 'Ожидаю подтверждение оплаты...',
+    paymentConfirmed: 'Оплата получена. Запись подтверждена.',
+    paymentFailed: 'Оплата не завершена. Попробуйте создать запись еще раз.',
+    paymentClose: 'Закрыть',
   },
   en: {
     title: 'Book an appointment',
@@ -102,9 +147,18 @@ const text: Record<Lang, {
     optional: 'Optional',
     submit: 'Book',
     sending: 'Booking...',
-    success: 'Your request has been sent. I will contact you to confirm.',
+    success: 'Deposit received. Your appointment is confirmed and I received a Telegram notification.',
     error: 'Could not book. Check the details or choose another time.',
     unavailable: 'Online booking is being configured. You can leave a request below for now.',
+    paymentTitle: 'Pay the deposit',
+    paymentIntro: 'To confirm the appointment, pay the fixed deposit. After the payment is received, the appointment is confirmed automatically.',
+    paymentQr: 'Scan the QR code with your camera or monobank app',
+    paymentMobile: 'On phone, tap the payment button',
+    paymentOpen: 'Pay',
+    paymentWaiting: 'Waiting for payment confirmation...',
+    paymentConfirmed: 'Payment received. Appointment confirmed.',
+    paymentFailed: 'Payment was not completed. Please create the appointment again.',
+    paymentClose: 'Close',
   },
 }
 
@@ -194,6 +248,7 @@ export default function BookingWidget() {
   const [sending, setSending] = useState(false)
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [openDate, setOpenDate] = useState('')
+  const [payment, setPayment] = useState<PaymentState | null>(null)
 
   const weekRows = useMemo(() => {
     const rows: BookingDay[][] = []
@@ -241,6 +296,37 @@ export default function BookingWidget() {
     loadAvailability()
   }, [])
 
+  useEffect(() => {
+    if (!payment?.invoiceId || payment.confirmed || payment.failed) return
+
+    const interval = window.setInterval(async () => {
+      const response = await fetch(`/api/booking/payment/status?invoiceId=${encodeURIComponent(payment.invoiceId)}`, { cache: 'no-store' }).catch(() => null)
+      if (!response?.ok) return
+
+      const data = await response.json().catch(() => null) as { bookingStatus?: string; paymentStatus?: string; failureReason?: string } | null
+      if (!data) return
+
+      if (data.bookingStatus === 'booked') {
+        setPayment((current) => current?.invoiceId === payment.invoiceId ? { ...current, confirmed: true } : current)
+        setName('')
+        setPhone('+380')
+        setComment('')
+        setSelectedTime('')
+        setStatus('success')
+        loadAvailability()
+        return
+      }
+
+      if (['failure', 'expired', 'cancelled', 'reversed'].includes(data.paymentStatus || '') || data.bookingStatus === 'cancelled') {
+        setPayment((current) => current?.invoiceId === payment.invoiceId ? { ...current, failed: true, failureReason: data.failureReason } : current)
+        setStatus('error')
+        loadAvailability()
+      }
+    }, 3500)
+
+    return () => window.clearInterval(interval)
+  }, [payment?.invoiceId, payment?.confirmed, payment?.failed])
+
   const submitBooking = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (sending) return
@@ -275,12 +361,17 @@ export default function BookingWidget() {
 
     setSending(false)
 
-    if (response?.ok) {
-      setName('')
-      setPhone('+380')
-      setComment('')
-      setSelectedTime('')
-      setStatus('success')
+    const data = response ? await response.json().catch(() => null) as BookingResponse | null : null
+
+    if (response?.ok && data?.paymentRequired && data.invoiceId && data.pageUrl && data.amount) {
+      setPayment({
+        invoiceId: data.invoiceId,
+        pageUrl: data.pageUrl,
+        amount: data.amount,
+        confirmed: false,
+        failed: false,
+      })
+      setStatus('idle')
       loadAvailability()
       return
     }
@@ -290,6 +381,57 @@ export default function BookingWidget() {
 
   return (
     <section className="contact-card mx-auto grid w-full max-w-6xl gap-4 rounded-[1.6rem] border border-white/75 bg-white/86 p-4 shadow-[0_22px_64px_rgba(15,23,42,0.09)] backdrop-blur-xl sm:p-5 lg:grid-cols-[minmax(0,1.18fr)_22rem] lg:gap-5">
+      {payment && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/34 px-4 py-6 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-[1.5rem] border border-white/80 bg-white/94 p-5 text-center shadow-[0_28px_90px_rgba(15,23,42,0.22)] backdrop-blur-xl sm:p-6">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-sky-600">{Math.round(payment.amount / 100)} грн</p>
+            <h3 className="heading-section mt-2 text-2xl leading-tight text-slate-800">{t.paymentTitle}</h3>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600">{t.paymentIntro}</p>
+
+            {!payment.confirmed && !payment.failed && (
+              <>
+                <div className="mt-5 hidden rounded-[1.25rem] border border-sky-100 bg-white p-4 shadow-inner sm:block">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(payment.pageUrl)}`}
+                    alt="Monobank payment QR"
+                    className="mx-auto h-52 w-52"
+                  />
+                  <p className="mt-3 text-xs font-semibold text-slate-500">{t.paymentQr}</p>
+                </div>
+                <p className="mt-5 text-sm font-semibold text-slate-600 sm:hidden">{t.paymentMobile}</p>
+                <a
+                  href={payment.pageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-primary mt-4 inline-flex w-full justify-center"
+                >
+                  {t.paymentOpen}
+                </a>
+                <p className="mt-4 rounded-2xl bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700">{t.paymentWaiting}</p>
+              </>
+            )}
+
+            {payment.confirmed && (
+              <p className="mt-5 rounded-2xl bg-sage-50 px-4 py-3 text-sm font-semibold text-sage-600">{t.paymentConfirmed}</p>
+            )}
+
+            {payment.failed && (
+              <p className="mt-5 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">
+                {payment.failureReason || t.paymentFailed}
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setPayment(null)}
+              className="mt-4 min-h-11 w-full rounded-2xl border border-sky-100 bg-white/86 px-4 text-sm font-black text-slate-600 transition-colors hover:bg-sky-50"
+            >
+              {t.paymentClose}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="relative overflow-visible rounded-[1.5rem] border border-white/70 bg-[radial-gradient(circle_at_18%_12%,rgba(125,211,252,0.26),transparent_34%),radial-gradient(circle_at_86%_78%,rgba(141,203,188,0.22),transparent_36%),linear-gradient(145deg,rgba(255,255,255,0.88),rgba(236,254,255,0.62))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] sm:p-5">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
