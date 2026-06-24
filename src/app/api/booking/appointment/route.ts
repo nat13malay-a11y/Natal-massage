@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { addDays, displayWeekStart, generateAvailability, todayKyiv, type BookingAppointment, type BookingOverride, type BookingWeekSetting } from '@/lib/booking'
+import { daysBetweenInclusive, displayWeekStart, endOfCalendarMonthGrid, generateAvailability, startOfMonth, todayKyiv, type BookingAppointment, type BookingOverride, type BookingWeekSetting } from '@/lib/booking'
+import { sendBookingTelegram } from '@/lib/bookingNotifications'
 import { depositAmountKopiykas, getJarPaymentConfig, missingJarPaymentConfig } from '@/lib/monobankJar'
 import { supabase } from '@/lib/supabaseClient'
 
@@ -90,7 +91,7 @@ export async function POST(request: Request) {
   }
 
   const start = todayKyiv()
-  const end = addDays(start, 89)
+  const end = endOfCalendarMonthGrid(startOfMonth(start))
   if (date < start || date > end) {
     return NextResponse.json({ ok: false, error: 'Date is outside the booking window' }, noStore(400))
   }
@@ -101,7 +102,7 @@ export async function POST(request: Request) {
     .eq('status', 'pending_payment')
     .lt('created_at', pendingCutoffIso())
 
-  const weekStart = displayWeekStart(date, start)
+  const weekStart = displayWeekStart(date)
   const [settingsResult, overridesResult, appointmentsResult, weeksResult] = await Promise.all([
     supabase
       .from('booking_settings')
@@ -122,8 +123,8 @@ export async function POST(request: Request) {
     supabase
       .from('booking_week_settings')
       .select('week_start, city')
-      .gte('week_start', displayWeekStart(start, start))
-      .lte('week_start', displayWeekStart(end, start)),
+      .gte('week_start', displayWeekStart(start))
+      .lte('week_start', displayWeekStart(end)),
   ])
 
   if (settingsResult.error || overridesResult.error || appointmentsResult.error || weeksResult.error) {
@@ -157,7 +158,7 @@ export async function POST(request: Request) {
     weekStart: item.week_start,
     city: item.city,
   }))
-  const day = generateAvailability(settings, overrides, appointments, weeks, 90).find((item) => item.date === date)
+  const day = generateAvailability(settings, overrides, appointments, weeks, daysBetweenInclusive(start, end), start).find((item) => item.date === date)
   const slot = day?.slots.find((item) => item.time === time)
 
   if (!slot?.available) {
@@ -202,6 +203,21 @@ export async function POST(request: Request) {
   }
 
   const paymentUrl = `${jarConfig.jarUrl}${jarConfig.jarUrl.includes('?') ? '&' : '?'}booking=${encodeURIComponent(reference)}&amount=${Math.round(amount / 100)}`
+  const pendingNotification = await sendBookingTelegram({
+    date,
+    time,
+    city,
+    name,
+    phone,
+    comment,
+    submittedAt,
+    device: payload.device || {},
+    payment: {
+      amount,
+      invoiceId: reference,
+    },
+  }, phone, { status: 'pending' })
+  const telegramMessageIds = typeof pendingNotification === 'object' ? pendingNotification.messageIds : {}
 
   await supabase
     .from('booking_appointments')
@@ -213,6 +229,7 @@ export async function POST(request: Request) {
           invoiceId: reference,
           pageUrl: paymentUrl,
           status: 'waiting',
+          telegramMessageIds,
         },
         city,
       },

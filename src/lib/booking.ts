@@ -107,17 +107,46 @@ export function addDays(date: string, days: number) {
   return next.toISOString().slice(0, 10)
 }
 
-function dateIndex(from: string, to: string) {
-  const [fromYear, fromMonth, fromDay] = from.split('-').map(Number)
-  const [toYear, toMonth, toDay] = to.split('-').map(Number)
-  const fromDate = new Date(Date.UTC(fromYear, fromMonth - 1, fromDay))
-  const toDate = new Date(Date.UTC(toYear, toMonth - 1, toDay))
-  return Math.round((toDate.getTime() - fromDate.getTime()) / 86400000)
+function parseUtcDate(date: string) {
+  const [year, month, day] = date.split('-').map(Number)
+  return new Date(Date.UTC(year, month - 1, day))
 }
 
-export function displayWeekStart(date: string, rangeStart = todayKyiv()) {
-  const index = Math.max(0, dateIndex(rangeStart, date))
-  return addDays(rangeStart, Math.floor(index / 7) * 7)
+function formatUtcDate(date: Date) {
+  return date.toISOString().slice(0, 10)
+}
+
+export function daysBetweenInclusive(from: string, to: string) {
+  const start = parseUtcDate(from)
+  const end = parseUtcDate(to)
+  return Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000) + 1)
+}
+
+export function startOfMonth(date = todayKyiv()) {
+  const current = parseUtcDate(date)
+  return formatUtcDate(new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth(), 1)))
+}
+
+export function endOfMonth(date = todayKyiv()) {
+  const current = parseUtcDate(date)
+  return formatUtcDate(new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 1, 0)))
+}
+
+export function displayWeekStart(date: string, _rangeStart = todayKyiv()) {
+  const current = parseUtcDate(date)
+  const mondayOffset = (current.getUTCDay() + 6) % 7
+  current.setUTCDate(current.getUTCDate() - mondayOffset)
+  return formatUtcDate(current)
+}
+
+export function startOfCalendarMonthGrid(date = todayKyiv()) {
+  return displayWeekStart(startOfMonth(date))
+}
+
+export function endOfCalendarMonthGrid(date = todayKyiv()) {
+  const monthEnd = endOfMonth(date)
+  const sundayOffset = 6 - ((weekday(monthEnd) + 6) % 7)
+  return addDays(monthEnd, sundayOffset)
 }
 
 export function weekday(date: string) {
@@ -148,8 +177,8 @@ function nowMinutesKyiv() {
   return hours * 60 + minutes
 }
 
-export function getDateRange(days = 35) {
-  const start = todayKyiv()
+export function getDateRange(days = 35, rangeStart = todayKyiv()) {
+  const start = rangeStart
   return Array.from({ length: days }, (_, index) => addDays(start, index))
 }
 
@@ -159,6 +188,7 @@ export function generateAvailability(
   appointments: BookingAppointment[] = [],
   weekSettings: BookingWeekSetting[] = [],
   days = 35,
+  rangeStart = todayKyiv(),
 ) {
   const settings = normalizeSettings(settingsInput)
   const overrideMap = new Map(overrides.map((item) => [item.date, item]))
@@ -170,10 +200,8 @@ export function generateAvailability(
   )
   const today = todayKyiv()
   const now = nowMinutesKyiv()
-  const rangeStart = today
-
-  return getDateRange(days).map<BookingDay>((date) => {
-    const weekStart = displayWeekStart(date, rangeStart)
+  return getDateRange(days, rangeStart).map<BookingDay>((date) => {
+    const weekStart = displayWeekStart(date)
     const dayOfWeek = weekday(date)
     const weekly = settings.workingHours[String(dayOfWeek) as WeekdayKey]
     const override = overrideMap.get(date)

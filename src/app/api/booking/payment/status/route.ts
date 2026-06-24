@@ -34,6 +34,8 @@ type AppointmentRow = {
       statementId?: string
       lastCheckedAt?: string
       failureReason?: string
+      telegramMessageIds?: Record<string, number>
+      paidTelegramMessageIds?: Record<string, number>
     }
   }
 }
@@ -111,7 +113,7 @@ async function confirmIfPaid(row: AppointmentRow) {
     return { row, checked: true, error: '' }
   }
 
-  const paidClient = {
+  let paidClient = {
     ...nextClient,
     mono: {
       ...nextClient.mono,
@@ -132,12 +134,28 @@ async function confirmIfPaid(row: AppointmentRow) {
     })
     .eq('id', row.id)
     .eq('status', 'pending_payment')
+    .select('id')
+    .maybeSingle()
 
   if (updateResult.error) {
     return { row, checked: true, error: updateResult.error.message }
   }
 
-  await sendBookingTelegram({
+  if (!updateResult.data) {
+    const currentResult = await supabase!
+      .from('booking_appointments')
+      .select('id, date, time, name, phone, comment, status, created_at, client')
+      .eq('id', row.id)
+      .maybeSingle()
+
+    return {
+      row: (currentResult.data as AppointmentRow | null) || row,
+      checked: true,
+      error: currentResult.error?.message || '',
+    }
+  }
+
+  const paidNotification = await sendBookingTelegram({
     date: row.date,
     time: row.time,
     city: row.client?.city || null,
@@ -150,7 +168,23 @@ async function confirmIfPaid(row: AppointmentRow) {
       amount: payment.amount,
       invoiceId: payment.id,
     },
-  }, row.phone)
+  }, row.phone, {
+    status: 'paid',
+    replyToMessageIds: row.client?.mono?.telegramMessageIds || {},
+  })
+  const paidTelegramMessageIds = typeof paidNotification === 'object' ? paidNotification.messageIds : {}
+  paidClient = {
+    ...paidClient,
+    mono: {
+      ...paidClient.mono,
+      paidTelegramMessageIds,
+    },
+  }
+
+  await supabase!
+    .from('booking_appointments')
+    .update({ client: paidClient })
+    .eq('id', row.id)
 
   return {
     row: {

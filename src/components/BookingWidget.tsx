@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { type BookingDay } from '@/lib/booking'
+import { daysBetweenInclusive, endOfCalendarMonthGrid, startOfCalendarMonthGrid, startOfMonth, todayKyiv, type BookingDay } from '@/lib/booking'
 import { useI18n, type Lang } from '@/i18n'
 
 type AvailabilityResponse = {
@@ -44,20 +44,19 @@ const text: Record<Lang, {
   title: string
   intro: string
   kicker: string
-  period: string
-  date: string
-  time: string
-  city: string
   availableDates: string
   selected: string
   notSelected: string
+  chooseDate: string
+  chooseTimeHint: string
+  back: string
+  choose: string
   full: string
   closed: string
-  free: string
+  city: string
   name: string
   phone: string
   comment: string
-  optional: string
   submit: string
   sending: string
   success: string
@@ -75,27 +74,26 @@ const text: Record<Lang, {
 }> = {
   uk: {
     title: 'Записатися на прийом',
-    intro: 'Оберіть вільний день і час. Після відправки я отримаю заявку в Telegram.',
+    intro: 'Оберіть вільний день і час. Після вибору відкриється форма запису.',
     kicker: 'Онлайн-запис',
-    period: '2 тижні',
-    date: 'День',
-    time: 'Час',
-    city: 'Місто',
     availableDates: 'Доступні дати',
     selected: 'Ви обрали',
-    notSelected: 'Дата і час не обрані',
-    full: 'зайнято',
-    closed: 'вихідний',
-    free: 'вільно',
+    notSelected: 'Дата не обрана',
+    chooseDate: 'Оберіть дату запису',
+    chooseTimeHint: 'Оберіть вільний час нижче',
+    back: 'Змінити дату',
+    choose: 'Обрати',
+    full: 'Зайнято',
+    closed: 'Вихідний',
+    city: 'Місто',
     name: 'Ім’я',
     phone: 'Номер телефону',
     comment: 'Коментар',
-    optional: 'Опціонально',
     submit: 'Записатися',
     sending: 'Записую...',
     success: 'Задаток отримано. Запис підтверджено, я отримала повідомлення в Telegram.',
     error: 'Не вдалося записати. Перевірте дані або оберіть інший час.',
-    unavailable: 'Онлайн-запис ще налаштовується. Поки можна залишити заявку нижче.',
+    unavailable: 'Онлайн-запис ще налаштовується.',
     paymentTitle: 'Внесіть задаток',
     paymentIntro: 'Щоб підтвердити запис, внесіть фіксований задаток. Після зарахування оплати запис підтвердиться автоматично.',
     paymentQr: 'Відскануйте QR-код камерою або застосунком monobank',
@@ -108,27 +106,26 @@ const text: Record<Lang, {
   },
   ru: {
     title: 'Записаться на прием',
-    intro: 'Выберите свободный день и время. После отправки я получу заявку в Telegram.',
+    intro: 'Выберите свободный день и время. После выбора откроется форма записи.',
     kicker: 'Онлайн-запись',
-    period: '2 недели',
-    date: 'День',
-    time: 'Время',
-    city: 'Город',
     availableDates: 'Доступные даты',
     selected: 'Вы выбрали',
-    notSelected: 'Дата и время не выбраны',
-    full: 'занято',
-    closed: 'выходной',
-    free: 'свободно',
+    notSelected: 'Дата не выбрана',
+    chooseDate: 'Выберите дату записи',
+    chooseTimeHint: 'Выберите свободное время ниже',
+    back: 'Изменить дату',
+    choose: 'Выбрать',
+    full: 'Занято',
+    closed: 'Выходной',
+    city: 'Город',
     name: 'Имя',
     phone: 'Номер телефона',
     comment: 'Комментарий',
-    optional: 'Опционально',
     submit: 'Записаться',
     sending: 'Записываю...',
     success: 'Задаток получен. Запись подтверждена, я получила уведомление в Telegram.',
     error: 'Не удалось записать. Проверьте данные или выберите другое время.',
-    unavailable: 'Онлайн-запись еще настраивается. Пока можно оставить заявку ниже.',
+    unavailable: 'Онлайн-запись еще настраивается.',
     paymentTitle: 'Внесите задаток',
     paymentIntro: 'Чтобы подтвердить запись, внесите фиксированный задаток. После зачисления оплаты запись подтвердится автоматически.',
     paymentQr: 'Отсканируйте QR-код камерой или приложением monobank',
@@ -141,27 +138,26 @@ const text: Record<Lang, {
   },
   en: {
     title: 'Book an appointment',
-    intro: 'Choose an available day and time. After sending, I will receive the request in Telegram.',
+    intro: 'Choose an available day and time. After choosing, the booking form opens.',
     kicker: 'Online booking',
-    period: '2 weeks',
-    date: 'Day',
-    time: 'Time',
-    city: 'City',
     availableDates: 'Available dates',
     selected: 'Selected',
-    notSelected: 'Date and time not selected',
-    full: 'full',
-    closed: 'closed',
-    free: 'free',
+    notSelected: 'Date not selected',
+    chooseDate: 'Choose appointment date',
+    chooseTimeHint: 'Choose an available time below',
+    back: 'Change date',
+    choose: 'Choose',
+    full: 'Booked',
+    closed: 'Closed',
+    city: 'City',
     name: 'Name',
     phone: 'Phone number',
     comment: 'Comment',
-    optional: 'Optional',
     submit: 'Book',
     sending: 'Booking...',
     success: 'Deposit received. Your appointment is confirmed and I received a Telegram notification.',
     error: 'Could not book. Check the details or choose another time.',
-    unavailable: 'Online booking is being configured. You can leave a request below for now.',
+    unavailable: 'Online booking is being configured.',
     paymentTitle: 'Pay the deposit',
     paymentIntro: 'To confirm the appointment, pay the fixed deposit. After the payment is received, the appointment is confirmed automatically.',
     paymentQr: 'Scan the QR code with your camera or monobank app',
@@ -189,14 +185,18 @@ function formatPhoneInput(value: string): string {
   return `+380${localPart.substring(0, 9)}`
 }
 
-function dayNumber(date: string) {
-  return date.split('-')[2]
-}
-
 function shortDate(date: string) {
   if (!date) return ''
   const [, month, day] = date.split('-')
   return `${day}.${month}`
+}
+
+function dayNumber(date: string) {
+  return date.split('-')[2]?.replace(/^0/, '') || ''
+}
+
+function dateMonth(date: string) {
+  return date.slice(0, 7)
 }
 
 function weekdayShort(day: BookingDay, lang: Lang) {
@@ -216,39 +216,16 @@ function weekdayLabels(lang: Lang) {
   }[lang]
 }
 
-function monthLabel(date: string, lang: Lang) {
-  if (!date) return ''
+function monthTitle(date: string, lang: Lang) {
   const locale = lang === 'uk' ? 'uk-UA' : lang === 'ru' ? 'ru-RU' : 'en-US'
   const value = new Date(`${date}T12:00:00`)
-  return new Intl.DateTimeFormat(locale, { month: 'long' }).format(value)
-}
-
-function calendarRangeLabel(days: BookingDay[], lang: Lang) {
-  const first = days[0]?.date
-  const last = days[days.length - 1]?.date
-  if (!first || !last) return ''
-
-  const firstMonth = monthLabel(first, lang)
-  const lastMonth = monthLabel(last, lang)
-  if (firstMonth === lastMonth) return firstMonth
-
-  return `${firstMonth} - ${lastMonth}`
-}
-
-function compactDayStatus(day: BookingDay, lang: Lang) {
-  if (day.closed) return lang === 'en' ? 'off' : lang === 'ru' ? 'вых' : 'вих'
-  if (!day.available) return lang === 'en' ? 'busy' : lang === 'ru' ? 'зан' : 'зайн'
-  return ''
-}
-
-function splitTime(time: string) {
-  const [hours, minutes] = time.split(':')
-  return { hours, minutes }
+  return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(value)
 }
 
 export default function BookingWidget() {
   const { lang } = useI18n()
   const t = text[lang]
+  const [monthAnchor, setMonthAnchor] = useState(() => startOfMonth(todayKyiv()))
   const [days, setDays] = useState<BookingDay[]>([])
   const [configured, setConfigured] = useState(true)
   const [selectedDate, setSelectedDate] = useState('')
@@ -260,9 +237,14 @@ export default function BookingWidget() {
   const [sending, setSending] = useState(false)
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
-  const [openDate, setOpenDate] = useState('')
+  const [flipped, setFlipped] = useState(false)
   const [payment, setPayment] = useState<PaymentState | null>(null)
   const [mounted, setMounted] = useState(false)
+  const bookingRef = useRef<HTMLElement | null>(null)
+
+  const monthStart = useMemo(() => startOfCalendarMonthGrid(monthAnchor), [monthAnchor])
+  const monthEnd = useMemo(() => endOfCalendarMonthGrid(monthAnchor), [monthAnchor])
+  const monthDays = useMemo(() => daysBetweenInclusive(monthStart, monthEnd), [monthStart, monthEnd])
 
   const weekRows = useMemo(() => {
     const rows: BookingDay[][] = []
@@ -274,20 +256,22 @@ export default function BookingWidget() {
       }
       current.push(day)
     })
-    return rows.slice(0, 2)
+    return rows
   }, [days])
-  const calendarDays = useMemo(() => weekRows.flat(), [weekRows])
+
   const selectedDay = useMemo(
     () => days.find((day) => day.date === selectedDate),
     [days, selectedDate],
   )
-  const selectedLabel = selectedDay && selectedTime
-    ? `${weekdayShort(selectedDay, lang)}, ${shortDate(selectedDay.date)} · ${selectedTime}`
+  const selectedCity = selectedDay?.city || ''
+  const selectedSummary = selectedDay
+    ? `${weekdayShort(selectedDay, lang)}, ${shortDate(selectedDay.date)}${selectedTime ? ` · ${selectedTime}` : ''}${selectedCity ? ` · ${selectedCity}` : ''}`
     : t.notSelected
+  const selectedSlots = selectedDay?.slots || []
 
   const loadAvailability = async () => {
     setLoading(true)
-    const response = await fetch('/api/booking/availability?days=35', { cache: 'no-store' }).catch(() => null)
+    const response = await fetch(`/api/booking/availability?from=${encodeURIComponent(monthStart)}&days=${monthDays}`, { cache: 'no-store' }).catch(() => null)
     setLoading(false)
 
     if (!response?.ok) {
@@ -300,10 +284,11 @@ export default function BookingWidget() {
     setConfigured(Boolean(data.configured))
     setDays(nextDays)
 
-    const firstAvailable = nextDays.find((day) => day.available)
-    setSelectedDate((current) => current || firstAvailable?.date || nextDays[0]?.date || '')
-    setSelectedTime('')
-    setOpenDate('')
+    if (selectedDate && !nextDays.some((day) => day.date === selectedDate)) {
+      setSelectedDate('')
+      setSelectedTime('')
+      setFlipped(false)
+    }
   }
 
   useEffect(() => {
@@ -311,8 +296,17 @@ export default function BookingWidget() {
   }, [])
 
   useEffect(() => {
-    loadAvailability()
+    const interval = window.setInterval(() => {
+      const currentMonth = startOfMonth(todayKyiv())
+      setMonthAnchor((current) => current < currentMonth ? currentMonth : current)
+    }, 15 * 60 * 1000)
+
+    return () => window.clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    loadAvailability()
+  }, [monthStart, monthDays])
 
   useEffect(() => {
     const reference = new URLSearchParams(window.location.search).get('bookingPayment')
@@ -339,14 +333,14 @@ export default function BookingWidget() {
         })
 
         if (confirmed) {
-        setStatus('success')
-        setErrorMessage('')
-        loadAvailability()
-      } else if (failed) {
-        setStatus('error')
-        setErrorMessage(data.failureReason || t.paymentFailed)
-        loadAvailability()
-      }
+          setStatus('success')
+          setErrorMessage('')
+          loadAvailability()
+        } else if (failed) {
+          setStatus('error')
+          setErrorMessage(data.failureReason || t.paymentFailed)
+          loadAvailability()
+        }
       })
       .catch(() => undefined)
   }, [])
@@ -367,6 +361,7 @@ export default function BookingWidget() {
         setPhone('+380')
         setComment('')
         setSelectedTime('')
+        setFlipped(false)
         setStatus('success')
         setErrorMessage('')
         loadAvailability()
@@ -384,11 +379,29 @@ export default function BookingWidget() {
     return () => window.clearInterval(interval)
   }, [payment?.invoiceId, payment?.confirmed, payment?.failed])
 
+  const chooseDate = (day: BookingDay) => {
+    if (!day.available) return
+
+    setSelectedDate(day.date)
+    setSelectedTime('')
+    setFlipped(false)
+    setStatus('idle')
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    bookingRef.current?.scrollIntoView({
+      behavior: reducedMotion ? 'auto' : 'smooth',
+      block: 'start',
+      inline: 'nearest',
+    })
+
+    window.setTimeout(() => setFlipped(true), reducedMotion ? 40 : 620)
+  }
+
   const submitBooking = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (sending) return
 
-    if (!selectedDate || !selectedTime || phone.replace(/\D/g, '').length !== 12) {
+    if (!selectedDate || !selectedTime || !name.trim() || phone.replace(/\D/g, '').length !== 12) {
       setStatus('error')
       setErrorMessage(t.error)
       return
@@ -404,6 +417,7 @@ export default function BookingWidget() {
       body: JSON.stringify({
         date: selectedDate,
         time: selectedTime,
+        city: selectedCity,
         name,
         phone,
         comment,
@@ -497,236 +511,193 @@ export default function BookingWidget() {
   return (
     <>
       {paymentModal}
-      <section className="contact-card mx-auto grid w-full max-w-6xl gap-4 rounded-[1.6rem] border border-white/75 bg-white/86 p-4 shadow-[0_22px_64px_rgba(15,23,42,0.09)] backdrop-blur-xl sm:p-5 lg:grid-cols-[minmax(0,1.18fr)_22rem] lg:gap-5">
-      <div className="relative overflow-visible rounded-[1.5rem] border border-white/70 bg-[radial-gradient(circle_at_18%_12%,rgba(125,211,252,0.26),transparent_34%),radial-gradient(circle_at_86%_78%,rgba(141,203,188,0.22),transparent_36%),linear-gradient(145deg,rgba(255,255,255,0.88),rgba(236,254,255,0.62))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] sm:p-5">
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-sky-600">{t.kicker}</p>
-            <h3 className="heading-section text-2xl leading-tight text-slate-800 sm:text-3xl">{t.title}</h3>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">{t.intro}</p>
-          </div>
-          <span className="w-max rounded-full border border-white/80 bg-white/58 px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-600 shadow-sm">
-            {t.period}
-          </span>
-        </div>
+      <section ref={bookingRef} className="booking-flip-booking contact-card">
+        <div className={`booking-flip-scene ${flipped ? 'is-flipped' : ''}`}>
+          <div className="booking-flip-inner">
+            <section className="booking-face booking-face-front booking-card" aria-label={t.kicker}>
+              <header className="booking-head">
+                <div>
+                  <p className="booking-kicker">{t.kicker}</p>
+                  <h3 className="booking-title">{t.title}</h3>
+                  <p className="booking-intro">{t.intro}</p>
+                </div>
+              </header>
 
-        <div className="relative overflow-visible rounded-[1.65rem] border border-white/72 bg-slate-900/[0.035] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.58),0_18px_54px_rgba(61,148,192,0.12)] sm:p-4">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              aria-hidden="true"
-              tabIndex={-1}
-              className="grid h-9 w-9 place-items-center rounded-[0.9rem] border border-white/70 bg-white/50 text-2xl leading-none text-slate-400 shadow-sm"
-            >
-              ‹
-            </button>
-            <div className="text-center">
-              <strong className="block text-base font-black capitalize leading-tight text-slate-800">
-                {calendarRangeLabel(calendarDays, lang)}
-              </strong>
-              <span className="mt-1 block text-xs font-semibold text-slate-500">{t.availableDates}</span>
-            </div>
-            <button
-              type="button"
-              aria-hidden="true"
-              tabIndex={-1}
-              className="grid h-9 w-9 place-items-center rounded-[0.9rem] border border-white/70 bg-white/50 text-2xl leading-none text-slate-400 shadow-sm"
-            >
-              ›
-            </button>
-          </div>
+              <div className="calendar-panel">
+                <div className="calendar-top is-static">
+                  <div className="calendar-month">
+                    <strong>{monthTitle(monthAnchor, lang)}</strong>
+                    <span>{t.chooseDate}</span>
+                  </div>
+                </div>
 
-          <div className="mb-2 grid grid-cols-7 gap-1.5 sm:gap-2">
-            {weekdayLabels(lang).map((label) => (
-              <span key={label} className="text-center text-[10px] font-bold uppercase text-slate-400 sm:text-xs">
-                {label}
-              </span>
-            ))}
-          </div>
-
-          <div className="space-y-8 sm:space-y-10">
-            {loading && Array.from({ length: 2 }).map((_, rowIndex) => (
-              <div key={rowIndex} className="rounded-[1.15rem] border border-white/58 bg-white/36 p-2">
-                <div className="mb-2 h-3 w-24 animate-pulse rounded-full bg-white/80" />
-                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-                  {Array.from({ length: 7 }).map((__, index) => (
-                    <div key={index} className="min-h-[48px] animate-pulse rounded-[0.9rem] bg-white/80 sm:min-h-[58px] sm:rounded-[1.1rem]" />
+                <div className="weekday-row" aria-hidden="true">
+                  {weekdayLabels(lang).map((label) => (
+                    <span key={label}>{label}</span>
                   ))}
                 </div>
-              </div>
-            ))}
 
-            {!loading && weekRows.map((week, weekIndex) => {
-              const city = week.find((day) => day.city)?.city
-              const weekOpen = week.some((day) => day.date === openDate)
+                <div className="week-list">
+                  {loading && Array.from({ length: 5 }).map((_, weekIndex) => (
+                    <section className="week-card" key={weekIndex}>
+                      <div className="week-card-head">
+                        <p className="week-range">&nbsp;</p>
+                      </div>
+                      <div className="days-grid">
+                        {Array.from({ length: 7 }).map((__, dayIndex) => (
+                          <div className="day-wrap" key={dayIndex}>
+                            <div className="day-cell is-skeleton" />
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  ))}
 
-              return (
-                <div
-                  key={week[0]?.weekStart || weekIndex}
-                  className={`rounded-[1.15rem] border border-white/58 bg-white/36 p-2 transition-[background-color,border-color] duration-300 ${weekOpen ? 'border-sky-100/90 bg-white/54' : ''}`}
-                >
-                  <div className="mb-2 flex min-h-5 items-center justify-between gap-3 px-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                      {shortDate(week[0]?.date || '')} - {shortDate(week[week.length - 1]?.date || '')}
-                    </span>
-                    {city && (
-                      <span className="max-w-[54%] truncate rounded-full border border-sky-100/80 bg-sky-50/86 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-sky-700">
-                        {t.city}: {city}
-                      </span>
-                    )}
-                  </div>
+                  {!loading && weekRows.map((week) => {
+                    const city = week.find((day) => day.city)?.city || ''
 
-                  <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-                    {week.map((day) => {
-                      const selected = day.date === selectedDate
-                      const open = day.date === openDate
-                      const disabled = !day.available
-                      const daySlots = day.slots.filter((slot) => slot.available)
-                      const selectedTimeParts = selected && selectedTime ? splitTime(selectedTime) : null
-
-                      return (
-                        <div key={day.date} className={`relative aspect-square min-h-0 sm:min-h-[58px] ${open ? 'z-[70]' : selected ? 'z-40' : 'z-0'}`}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (disabled) return
-                              const sameDate = selectedDate === day.date
-                              setSelectedDate(day.date)
-                              if (!sameDate) setSelectedTime('')
-                              setOpenDate((current) => current === day.date ? '' : day.date)
-                              setStatus('idle')
-                            }}
-                            disabled={disabled}
-                            aria-expanded={open}
-                            className={`relative z-20 flex h-full min-h-0 w-full cursor-pointer flex-col items-center justify-center rounded-[0.9rem] border px-0.5 py-0.5 text-center backdrop-blur-[18px] transition-all duration-300 disabled:cursor-not-allowed sm:min-h-[58px] sm:rounded-[1.1rem] sm:px-1 sm:py-1 ${
-                              selected
-                                ? 'scale-[1.04] border-sky-300 bg-gradient-to-br from-sky-100/95 via-white/88 to-sage-100/88 text-slate-800 shadow-[0_0_34px_rgba(61,148,192,0.24),0_16px_46px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.86)]'
-                                : disabled
-                                  ? 'border-white/62 bg-white/42 text-slate-300 opacity-70'
-                                  : 'border-white/82 bg-gradient-to-br from-white/82 to-white/48 text-slate-700 shadow-[0_10px_28px_rgba(15,23,42,0.07),inset_0_1px_0_rgba(255,255,255,0.68)] hover:-translate-y-1 hover:border-sky-200 hover:bg-white hover:shadow-[0_18px_44px_rgba(61,148,192,0.16)]'
-                            }`}
-                          >
-                            <span className="block text-[15px] font-black leading-none sm:text-xl">
-                              {selectedTimeParts ? (
-                                <>
-                                  <span className="flex flex-col items-center leading-[0.86] sm:hidden">
-                                    <span>{selectedTimeParts.hours}</span>
-                                    <span>{selectedTimeParts.minutes}</span>
-                                  </span>
-                                  <span className="hidden sm:inline">{selectedTime}</span>
-                                </>
-                              ) : dayNumber(day.date)}
-                            </span>
-                            <span className="mt-0.5 block max-w-full truncate text-[7px] font-bold uppercase leading-tight text-slate-400 sm:mt-1 sm:text-[10px]">
-                              {selected && selectedTime ? `${weekdayShort(day, lang)}, ${dayNumber(day.date)}` : day.available ? weekdayShort(day, lang) : compactDayStatus(day, lang)}
-                            </span>
-                          </button>
-
-                          {daySlots.map((slot, index) => {
-                            const total = daySlots.length
-                            const angle = -90 + (360 / total) * index
-                            const visible = open
-                            const radius = 'clamp(3.8rem, 16vw, 6rem)'
-                            const transform = visible
-                              ? `translate(-50%, -50%) rotate(${angle}deg) translateX(${radius}) rotate(${-angle}deg) scale(1)`
-                              : `translate(-50%, -50%) rotate(${angle}deg) translateX(0) rotate(${-angle}deg) scale(0.4)`
+                    return (
+                      <section className="week-card" key={week[0]?.weekStart}>
+                        <div className="week-card-head">
+                          <p className="week-range">{shortDate(week[0]?.date || '')} - {shortDate(week[week.length - 1]?.date || '')}</p>
+                          {city && <span className="week-city">{city}</span>}
+                        </div>
+                        <div className="days-grid">
+                          {week.map((day) => {
+                            const selected = day.date === selectedDate
+                            const outside = dateMonth(day.date) !== dateMonth(monthAnchor)
+                            const disabled = !day.available
 
                             return (
-                              <button
-                                key={slot.time}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedDate(day.date)
-                                  setSelectedTime(slot.time)
-                                  setOpenDate('')
-                                  setStatus('idle')
-                                }}
-                                className={`absolute left-1/2 top-1/2 z-[80] h-10 w-16 rounded-[0.95rem] border text-xs font-black transition-[opacity,transform,background-color,border-color,box-shadow] duration-500 focus-visible:outline focus-visible:outline-4 focus-visible:outline-sky-200 sm:h-11 sm:w-20 sm:rounded-2xl sm:text-sm ${
-                                  selectedDate === day.date && selectedTime === slot.time
-                                    ? 'border-sky-500 bg-gradient-to-br from-sky-500 to-sage-500 text-white shadow-[0_20px_52px_rgba(61,148,192,0.40),0_0_0_3px_rgba(255,255,255,0.96),inset_0_1px_0_rgba(255,255,255,0.34)]'
-                                    : 'border-sky-200 bg-white text-slate-900 shadow-[0_18px_44px_rgba(15,23,42,0.26),0_0_0_3px_rgba(255,255,255,0.96),inset_0_1px_0_rgba(255,255,255,0.92)] hover:border-sky-500 hover:bg-sky-50 hover:text-slate-950 hover:shadow-[0_24px_62px_rgba(61,148,192,0.30),0_0_0_3px_rgba(255,255,255,1)]'
-                                }`}
-                                style={{
-                                  opacity: visible ? 1 : 0,
-                                  pointerEvents: visible ? 'auto' : 'none',
-                                  transform,
-                                  transitionDelay: visible ? `${index * 45}ms` : '0ms',
-                                }}
-                              >
-                                {slot.time}
-                              </button>
+                              <div className="day-wrap" key={day.date}>
+                                <button
+                                  type="button"
+                                  disabled={disabled}
+                                  onClick={() => chooseDate(day)}
+                                  className={[
+                                    'day-cell',
+                                    selected ? 'is-selected' : '',
+                                    outside ? 'is-outside' : '',
+                                    disabled ? 'is-disabled' : '',
+                                  ].filter(Boolean).join(' ')}
+                                >
+                                  <span className="day-number">{dayNumber(day.date)}</span>
+                                  <span className="day-label">{weekdayShort(day, lang)}</span>
+                                </button>
+                              </div>
                             )
                           })}
                         </div>
-                      )
-                    })}
-                  </div>
+                      </section>
+                    )
+                  })}
                 </div>
-              )
-            })}
+              </div>
+
+              {!configured && (
+                <p className="booking-status is-error">{t.unavailable}</p>
+              )}
+            </section>
+
+            <section className="booking-face booking-face-back">
+              <div className="booking-form time-booking-card">
+                <button
+                  className="back-to-calendar"
+                  type="button"
+                  onClick={() => {
+                    setFlipped(false)
+                    setSelectedTime('')
+                    setStatus('idle')
+                  }}
+                >
+                  ← {t.back}
+                </button>
+
+                <div className="selected-date-card">
+                  <span className="summary-label">{t.selected}</span>
+                  <strong className="summary-value">{selectedSummary}</strong>
+                  <p className="selected-date-hint">{t.chooseTimeHint}</p>
+                </div>
+
+                <div className="time-list">
+                  {selectedSlots.length === 0 && (
+                    <p className="booking-status is-error">{t.closed}</p>
+                  )}
+
+                  {selectedSlots.map((slot) => {
+                    const expanded = selectedTime === slot.time && slot.available
+
+                    return (
+                      <div
+                        key={slot.time}
+                        className={[
+                          'time-row',
+                          !slot.available ? 'is-booked' : '',
+                          expanded ? 'is-expanded' : '',
+                        ].filter(Boolean).join(' ')}
+                      >
+                        <button
+                          type="button"
+                          className="time-row-head"
+                          disabled={!slot.available}
+                          onClick={() => {
+                            if (!slot.available) return
+                            setSelectedTime(slot.time)
+                            setStatus('idle')
+                          }}
+                        >
+                          <span className="time-value">{slot.time}</span>
+                          <span className="time-status">{slot.available ? t.choose : t.full}</span>
+                        </button>
+
+                        {expanded && (
+                          <form className="inline-booking-form" onSubmit={submitBooking}>
+                            <input
+                              className="inline-field"
+                              name="name"
+                              autoComplete="name"
+                              placeholder={t.name}
+                              value={name}
+                              onChange={(event) => setName(event.target.value)}
+                              required
+                            />
+                            <input
+                              className="inline-field js-phone"
+                              name="phone"
+                              type="tel"
+                              inputMode="numeric"
+                              autoComplete="tel"
+                              pattern="\+380\d{9}"
+                              value={phone}
+                              onChange={(event) => setPhone(formatPhoneInput(event.target.value))}
+                              onFocus={() => setPhone((current) => current || '+380')}
+                              required
+                            />
+                            <textarea
+                              className="inline-field inline-comment"
+                              name="comment"
+                              placeholder={t.comment}
+                              value={comment}
+                              onChange={(event) => setComment(event.target.value)}
+                            />
+                            <button className="inline-submit-btn" type="submit" disabled={sending}>
+                              {sending ? t.sending : t.submit}
+                            </button>
+                            {status !== 'idle' && (
+                              <p className={`booking-status ${status === 'success' ? 'is-success' : 'is-error'}`}>
+                                {status === 'success' ? t.success : errorMessage || t.error}
+                              </p>
+                            )}
+                          </form>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </section>
           </div>
         </div>
-
-        <div className="mt-4 flex justify-center rounded-[1.25rem] border border-white/68 bg-white/48 p-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
-          <div>
-            <span className="block text-xs font-bold uppercase tracking-wide text-slate-400">{t.selected}</span>
-            <strong className="mt-1 block text-sm font-black text-slate-800 sm:text-base">{selectedLabel}</strong>
-          </div>
-        </div>
-      </div>
-
-      <form onSubmit={submitBooking} className="grid content-start gap-3 rounded-[1.1rem] border border-sky-100/80 bg-white/90 p-4 shadow-sm sm:p-5">
-        <label className="block">
-          <span className="mb-2 block text-sm font-semibold text-slate-700">{t.name}</span>
-          <input
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            required
-            autoComplete="name"
-            className="min-h-12 w-full rounded-2xl border border-sky-100 bg-white/90 px-4 text-base text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-sky-300"
-          />
-        </label>
-        <label className="block">
-          <span className="mb-2 block text-sm font-semibold text-slate-700">{t.phone}</span>
-          <input
-            value={phone}
-            onChange={(event) => setPhone(formatPhoneInput(event.target.value))}
-            onFocus={() => setPhone((current) => current || '+380')}
-            required
-            type="tel"
-            inputMode="numeric"
-            autoComplete="tel"
-            pattern="\+380\d{9}"
-            placeholder="+380XXXXXXXXX"
-            className="min-h-12 w-full rounded-2xl border border-sky-100 bg-white/90 px-4 text-base text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-sky-300"
-          />
-        </label>
-        <label className="block">
-          <span className="mb-2 flex items-center justify-between gap-3 text-sm font-semibold text-slate-700">
-            {t.comment}
-            <span className="text-xs font-medium uppercase tracking-wide text-slate-400">{t.optional}</span>
-          </span>
-          <textarea
-            value={comment}
-            onChange={(event) => setComment(event.target.value)}
-            rows={3}
-            className="w-full resize-y rounded-2xl border border-sky-100 bg-white/90 px-4 py-3 text-base leading-relaxed text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-sky-300"
-          />
-        </label>
-        <button
-          type="submit"
-          disabled={sending || !selectedTime}
-          className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {sending ? t.sending : t.submit}
-        </button>
-        {status !== 'idle' && (
-          <p className={`rounded-2xl px-4 py-3 text-center text-sm font-semibold ${status === 'success' ? 'bg-sage-50 text-sage-500' : 'bg-rose-50 text-rose-600'}`}>
-            {status === 'success' ? t.success : t.error}
-            {status === 'error' && errorMessage && errorMessage !== t.error ? ` ${errorMessage}` : ''}
-          </p>
-        )}
-      </form>
       </section>
     </>
   )

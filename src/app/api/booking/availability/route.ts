@@ -15,8 +15,16 @@ function parseDays(request: Request) {
   return Number.isFinite(value) ? Math.min(Math.max(value, 14), 90) : 35
 }
 
+function parseStart(request: Request) {
+  const url = new URL(request.url)
+  const from = url.searchParams.get('from')
+  return /^\d{4}-\d{2}-\d{2}$/.test(from || '') ? from! : todayKyiv()
+}
+
 export async function GET(request: Request) {
   const days = parseDays(request)
+  const start = parseStart(request)
+  const end = addDays(start, days - 1)
 
   if (!supabase) {
     return NextResponse.json(
@@ -26,17 +34,14 @@ export async function GET(request: Request) {
         settings: defaultBookingSettings,
         overrides: [],
         weeks: [],
-        days: generateAvailability(defaultBookingSettings, [], [], [], days),
+        days: generateAvailability(defaultBookingSettings, [], [], [], days, start),
       },
       noStore(),
     )
   }
 
-  const start = todayKyiv()
-  const end = addDays(start, days - 1)
-
-  const weekStart = displayWeekStart(start, start)
-  const weekEnd = displayWeekStart(end, start)
+  const weekStart = displayWeekStart(start)
+  const weekEnd = displayWeekStart(end)
 
   const [settingsResult, overridesResult, appointmentsResult, weeksResult] = await Promise.all([
     supabase
@@ -73,7 +78,7 @@ export async function GET(request: Request) {
         settings: defaultBookingSettings,
         overrides: [],
         weeks: [],
-        days: generateAvailability(defaultBookingSettings, [], [], [], days),
+        days: generateAvailability(defaultBookingSettings, [], [], [], days, start),
       },
       noStore(),
     )
@@ -111,7 +116,7 @@ export async function GET(request: Request) {
       settings,
       overrides,
       weeks,
-      days: generateAvailability(settings, overrides, appointments, weeks, days),
+      days: generateAvailability(settings, overrides, appointments, weeks, days, start),
     },
     noStore(),
   )

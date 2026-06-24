@@ -39,24 +39,6 @@ function score(payload: AnalyticsPayload) {
   return Math.min(100, value)
 }
 
-async function notifyTelegram(payload: AnalyticsPayload, readScore: number) {
-  const token = process.env.TELEGRAM_BOT_TOKEN || process.env.telegram_bot_token
-  const chatId = process.env.TELEGRAM_CHAT_ID || process.env.telegram_chat_id
-  if (!token || !chatId || !payload.notify) return
-
-  const text = [
-    'Новые просмотры сайта:',
-    `Устроиство: ${payload.source || 'Персональный компьютер'}`,
-    `Сайт: ${payload.lastPath || payload.entryPath || 'Партфолио'}`,
-  ].join('\n')
-
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text }),
-  }).catch(() => undefined)
-}
-
 export async function POST(request: Request) {
   if (!supabase) {
     return NextResponse.json(
@@ -132,8 +114,6 @@ export async function POST(request: Request) {
       { status: 500, headers: { 'Cache-Control': 'no-store, max-age=0' } },
     )
   }
-
-  await notifyTelegram(payload, readScore)
 
   return NextResponse.json(
     { ok: true, readScore, accidental },

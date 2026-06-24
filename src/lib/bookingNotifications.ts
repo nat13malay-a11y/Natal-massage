@@ -1,3 +1,5 @@
+import { isTelegramConfigured, sendTelegramMessage, sendTelegramMessageDetailed } from '@/lib/telegramNotify'
+
 type BookingNotificationPayload = {
   date?: string
   time?: string
@@ -17,6 +19,11 @@ type BookingNotificationPayload = {
     amount?: number
     invoiceId?: string
   }
+}
+
+type BookingNotificationOptions = {
+  status?: 'pending' | 'paid'
+  replyToMessageIds?: Record<string, number>
 }
 
 function clean(value: unknown, max = 800) {
@@ -50,20 +57,23 @@ function humanDate(date: string) {
   }).format(new Date(Date.UTC(year, month - 1, day)))
 }
 
-export async function sendBookingTelegram(payload: BookingNotificationPayload, phone: string) {
-  const token = process.env.TELEGRAM_BOT_TOKEN || process.env.telegram_bot_token
-  const chatId = process.env.TELEGRAM_CHAT_ID || process.env.telegram_chat_id
-
-  if (!token || !chatId) return false
+export async function sendBookingTelegram(
+  payload: BookingNotificationPayload,
+  phone: string,
+  options: BookingNotificationOptions = {},
+) {
+  if (!isTelegramConfigured()) return false
 
   const submittedDate = payload.submittedAt ? new Date(payload.submittedAt) : new Date()
   const safeSubmittedDate = Number.isNaN(submittedDate.getTime()) ? new Date() : submittedDate
   const device = payload.device || {}
   const userAgent = clean(device.userAgent, 500)
   const paymentAmount = payload.payment?.amount ? Math.round(payload.payment.amount / 100) : 0
+  const paid = options.status === 'paid'
 
   const message = [
-    'Новая запись на прием',
+    paid ? 'ОПЛАЧЕНО' : 'Новая запись на массаж',
+    paid ? 'Запись подтверждена после поступления задатка' : 'Статус: ожидает предоплату',
     '',
     `Дата приема: ${payload.date ? humanDate(payload.date) : 'не выбрана'}`,
     `Время приема: ${payload.time || 'не выбрано'}`,
@@ -73,7 +83,7 @@ export async function sendBookingTelegram(payload: BookingNotificationPayload, p
     `Телефон: ${phone}`,
     `Комментарий: ${multiline(payload.comment, 1200) || 'не указан'}`,
     '',
-    payload.payment ? `Задаток: ${paymentAmount} грн оплачен` : '',
+    payload.payment ? `Задаток: ${paymentAmount} грн ${paid ? 'оплачен' : 'ожидается'}` : '',
     payload.payment?.invoiceId ? `Mono invoice: ${payload.payment.invoiceId}` : '',
     '',
     `Отправлено: ${kyivTime(safeSubmittedDate)} (Kyiv time)`,
@@ -81,34 +91,21 @@ export async function sendBookingTelegram(payload: BookingNotificationPayload, p
     `Язык: ${clean(device.language, 80) || 'не определено'}`,
   ].filter(Boolean).join('\n')
 
-  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: message,
-      disable_web_page_preview: true,
-    }),
-  }).catch(() => null)
+  const results = await sendTelegramMessageDetailed(message, {
+    disableWebPagePreview: true,
+    replyToMessageIds: options.replyToMessageIds,
+  })
 
-  return Boolean(response?.ok)
+  return {
+    ok: results.some((result) => result.ok),
+    messageIds: Object.fromEntries(
+      results
+        .filter((result) => result.ok && result.messageId)
+        .map((result) => [result.chatId, result.messageId!]),
+    ),
+  }
 }
 
 export async function sendBookingPaymentIssueTelegram(message: string) {
-  const token = process.env.TELEGRAM_BOT_TOKEN || process.env.telegram_bot_token
-  const chatId = process.env.TELEGRAM_CHAT_ID || process.env.telegram_chat_id
-
-  if (!token || !chatId) return false
-
-  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: message,
-      disable_web_page_preview: true,
-    }),
-  }).catch(() => null)
-
-  return Boolean(response?.ok)
+  return sendTelegramMessage(message, { disableWebPagePreview: true })
 }

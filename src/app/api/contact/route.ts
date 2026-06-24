@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { isTelegramConfigured, sendTelegramMessage } from '@/lib/telegramNotify'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -58,10 +59,7 @@ function kyivTime(date = new Date()) {
 }
 
 export async function POST(request: Request) {
-  const token = process.env.TELEGRAM_BOT_TOKEN || process.env.telegram_bot_token
-  const chatId = process.env.TELEGRAM_CHAT_ID || process.env.telegram_chat_id
-
-  if (!token || !chatId) {
+  if (!isTelegramConfigured()) {
     return NextResponse.json(
       { ok: false, error: 'Telegram is not configured' },
       { status: 503, headers: { 'Cache-Control': 'no-store, max-age=0' } },
@@ -106,32 +104,11 @@ export async function POST(request: Request) {
     `Язык: ${clean(device.language, 80) || 'не определено'}`,
   ].join('\n')
 
-  const keyboard = {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: "Написать в Telegram",
-            url: `https://t.me/${cleanedPhone}` 
-          }
-        ]
-      ]
-    }
-  };
-  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: message,
-      disable_web_page_preview: true,
-    }),
-  }).catch(() => null)
+  const sent = await sendTelegramMessage(message, { disableWebPagePreview: true })
 
-  if (!response?.ok) {
-    const details = await response?.json().catch(() => null)
+  if (!sent) {
     return NextResponse.json(
-      { ok: false, error: details?.description || 'Could not send Telegram message' },
+      { ok: false, error: 'Could not send Telegram message' },
       { status: 502, headers: { 'Cache-Control': 'no-store, max-age=0' } },
     )
   }

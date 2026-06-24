@@ -82,7 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       'Нейрореабілітолог, авторська нейрометодика, лікувальний масаж і реабілітація.',
     areaServed: ['Одеса', 'Білгород-Дністровський', 'Україна'],
     medicalSpecialty: ['Neurologic', 'Physiotherapy', 'Rehabilitation'],
-    telephone: '+380970534933',
+    telephone: '+380501419758',
     email: 'nat13malay@gmail.com',
     url: 'https://natal-massage.vercel.app',
     sameAs: [

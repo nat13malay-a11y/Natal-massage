@@ -36,6 +36,8 @@ type PendingAppointment = {
       amount?: number
       reference?: string
       statementId?: string
+      telegramMessageIds?: Record<string, number>
+      paidTelegramMessageIds?: Record<string, number>
     }
   }
 }
@@ -144,7 +146,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, noAppointment: true }, noStore())
   }
 
-  const client = {
+  let client = {
     ...(appointment.client || {}),
     mono: {
       ...(appointment.client?.mono || {}),
@@ -162,12 +164,18 @@ export async function POST(request: Request) {
     .update({ status: 'booked', client })
     .eq('id', appointment.id)
     .eq('status', 'pending_payment')
+    .select('id')
+    .maybeSingle()
 
   if (updateResult.error) {
     return NextResponse.json({ ok: false, error: updateResult.error.message }, noStore(500))
   }
 
-  await sendBookingTelegram({
+  if (!updateResult.data) {
+    return NextResponse.json({ ok: true, alreadyProcessed: true }, noStore())
+  }
+
+  const paidNotification = await sendBookingTelegram({
     date: appointment.date,
     time: appointment.time,
     city: appointment.client?.city || null,
@@ -180,7 +188,23 @@ export async function POST(request: Request) {
       amount: item.amount,
       invoiceId: item.id,
     },
-  }, appointment.phone)
+  }, appointment.phone, {
+    status: 'paid',
+    replyToMessageIds: appointment.client?.mono?.telegramMessageIds || {},
+  })
+  const paidTelegramMessageIds = typeof paidNotification === 'object' ? paidNotification.messageIds : {}
+  client = {
+    ...client,
+    mono: {
+      ...client.mono,
+      paidTelegramMessageIds,
+    },
+  }
+
+  await supabase
+    .from('booking_appointments')
+    .update({ client })
+    .eq('id', appointment.id)
 
   return NextResponse.json({ ok: true }, noStore())
 }

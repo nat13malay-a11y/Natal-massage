@@ -25,7 +25,7 @@ const copy: Record<Lang, {
     title: 'Почніть шлях до здоров’я',
     intro: 'Запишіться на консультацію. Разом ми визначимо, як нейрометодика може допомогти саме вам.',
     phoneLabel: 'Телефон',
-    phoneAria: 'Подзвонити за номером +38 097 053 49 33',
+    phoneAria: 'Подзвонити за номером +38 050 141 97 58',
     emailLabel: 'Email',
     visitLabel: 'Прийом',
     visitText: <>Одеса <br/> Білгород-Дністровський <br/> Виїзд в інші міста обговорюється</>,
@@ -39,7 +39,7 @@ const copy: Record<Lang, {
     title: 'Начните путь к здоровью',
     intro: 'Запишитесь на консультацию. Вместе мы определим, как нейрометодика может помочь именно вам.',
     phoneLabel: 'Телефон',
-    phoneAria: 'Позвонить по номеру +38 097 053 49 33',
+    phoneAria: 'Позвонить по номеру +38 050 141 97 58',
     emailLabel: 'Email',
     visitLabel: 'Приём',
     visitText: <>Одесса <br/> Белгород-Днепровский <br/> Выезд в другие города обсуждается</>,
@@ -53,7 +53,7 @@ const copy: Record<Lang, {
     title: 'Start your path to health',
     intro: 'Book a consultation. Together we will determine how the neuromethod can help your specific case.',
     phoneLabel: 'Phone',
-    phoneAria: 'Call +38 097 053 49 33',
+    phoneAria: 'Call +38 050 141 97 58',
     emailLabel: 'Email',
     visitLabel: 'Appointments',
     visitText: <>Odesa <br/> Bilhorod-Dnistrovskyi <br/> Trips to other cities are discussed individually</>,
@@ -149,7 +149,7 @@ export default function ContactSection() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
           {/* Phone */}
           <a
-            href="tel:+380970534933"
+            href="tel:+380501419758"
             className="contact-card card-hover glass rounded-2xl p-6 sm:p-8 text-center border border-white/70 space-y-4 group cursor-pointer min-h-[180px] flex flex-col justify-center"
             aria-label={t.phoneAria}
           >
@@ -160,7 +160,7 @@ export default function ContactSection() {
             </div>
             <div>
               <div className="text-xs text-slate-500 font-sans uppercase tracking-wider mb-1">{t.phoneLabel}</div>
-              <div className="font-semibold text-slate-700 font-sans text-lg">+38 (097) 053-49-33</div>
+              <div className="font-semibold text-slate-700 font-sans text-lg">+38 (050) 141-97-58</div>
             </div>
           </a>
 
@@ -244,7 +244,7 @@ export default function ContactSection() {
 
             {/* WhatsApp */}
             <a
-              href="https://wa.me/380970534933"
+              href="https://wa.me/380501419758"
               target="_blank"
               rel="noopener noreferrer"
               className="social-icon group rounded-2xl cursor-pointer"

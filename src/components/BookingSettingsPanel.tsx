@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { addDays, defaultBookingSettings, todayKyiv, type BookingOverride, type BookingSettings, type BookingWeekSetting, type WeekdayKey } from '@/lib/booking'
+import { addDays, daysBetweenInclusive, defaultBookingSettings, endOfCalendarMonthGrid, startOfCalendarMonthGrid, todayKyiv, type BookingOverride, type BookingSettings, type BookingWeekSetting, type WeekdayKey } from '@/lib/booking'
 import { useI18n, type Lang } from '@/i18n'
 
 type SettingsResponse = {
@@ -14,6 +14,11 @@ type SettingsResponse = {
 }
 
 const weekdays: WeekdayKey[] = ['1', '2', '3', '4', '5', '6', '0']
+
+function shortDate(date: string) {
+  const [, month, day] = date.split('-')
+  return `${day}.${month}`
+}
 
 const text: Record<Lang, {
   title: string
@@ -144,10 +149,12 @@ export default function BookingSettingsPanel() {
     () => overrides.find((item) => item.date === overrideDate),
     [overrideDate, overrides],
   )
-  const upcomingWeeks = useMemo(
-    () => Array.from({ length: 8 }, (_, index) => addDays(todayKyiv(), index * 7)),
-    [],
-  )
+  const monthWeeks = useMemo(() => {
+    const start = startOfCalendarMonthGrid(todayKyiv())
+    const end = endOfCalendarMonthGrid(todayKyiv())
+    const count = Math.ceil(daysBetweenInclusive(start, end) / 7)
+    return Array.from({ length: count }, (_, index) => addDays(start, index * 7))
+  }, [])
 
   const load = async () => {
     const response = await fetch('/api/booking/settings', { cache: 'no-store' }).catch(() => null)
@@ -354,12 +361,12 @@ export default function BookingSettingsPanel() {
       <div className="grid gap-3 rounded-2xl bg-slate-50/80 p-3">
         <h3 className="text-sm font-black uppercase text-slate-500">{t.cityWeeks}</h3>
         <div className="space-y-2">
-          {upcomingWeeks.map((weekStart) => (
+          {monthWeeks.map((weekStart) => (
             <div key={weekStart} className="grid gap-2 rounded-2xl bg-white p-3 shadow-[0_1px_0_rgba(148,163,184,0.12)] sm:grid-cols-[0.8fr_1.1fr_auto_auto] sm:items-end">
               <div>
                 <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t.week}</span>
                 <div className="flex h-11 items-center rounded-2xl bg-sky-50/35 px-3 text-sm font-black text-slate-700">
-                  {weekStart}
+                  {shortDate(weekStart)} - {shortDate(addDays(weekStart, 6))}
                 </div>
               </div>
               <label className="block">
