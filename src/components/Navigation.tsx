@@ -17,13 +17,14 @@ const labels: Record<Lang, {
       { href: '#about', label: 'Про мене' },
       { href: '#scene', label: 'Методика' },
       { href: '#results', label: 'Результати' },
+      { href: '#booking', label: 'Онлайн-запис' },
       { href: '#contact', label: 'Контакти' },
     ],
     mobile: [
       { href: '#hero', label: 'Головна', Icon: HomeIcon },
       { href: '#scene', label: 'Методика', Icon: MethodIcon },
       { href: '#results', label: 'Кейси', Icon: ResultsIcon },
-      { href: '#contact', label: 'Запис', Icon: ContactIcon },
+      { href: '#booking', label: 'Запис', Icon: ContactIcon },
     ],
     brand: 'Малай Н.Б.',
     top: 'Повернутися на початок сторінки',
@@ -35,13 +36,14 @@ const labels: Record<Lang, {
       { href: '#about', label: 'Обо мне' },
       { href: '#scene', label: 'Методика' },
       { href: '#results', label: 'Результаты' },
+      { href: '#booking', label: 'Онлайн-запись' },
       { href: '#contact', label: 'Контакты' },
     ],
     mobile: [
       { href: '#hero', label: 'Главная', Icon: HomeIcon },
       { href: '#scene', label: 'Методика', Icon: MethodIcon },
       { href: '#results', label: 'Кейсы', Icon: ResultsIcon },
-      { href: '#contact', label: 'Запись', Icon: ContactIcon },
+      { href: '#booking', label: 'Запись', Icon: ContactIcon },
     ],
     brand: 'Малай Н.Б.',
     top: 'Вернуться к началу страницы',
@@ -53,13 +55,14 @@ const labels: Record<Lang, {
       { href: '#about', label: 'About' },
       { href: '#scene', label: 'Method' },
       { href: '#results', label: 'Results' },
+      { href: '#booking', label: 'Online booking' },
       { href: '#contact', label: 'Contacts' },
     ],
     mobile: [
       { href: '#hero', label: 'Home', Icon: HomeIcon },
       { href: '#scene', label: 'Method', Icon: MethodIcon },
       { href: '#results', label: 'Cases', Icon: ResultsIcon },
-      { href: '#contact', label: 'Booking', Icon: ContactIcon },
+      { href: '#booking', label: 'Booking', Icon: ContactIcon },
     ],
     brand: 'Malay N.B.',
     top: 'Return to the top of the page',
@@ -106,7 +109,7 @@ const languageOptions: Array<{
   },
 ]
 
-const navHrefs = ['#hero', '#scene', '#results', '#contact']
+const navHrefs = ['#hero', '#scene', '#results', '#booking', '#contact']
 
 export default function Navigation() {
   const { lang } = useI18n()
@@ -219,7 +222,7 @@ export default function Navigation() {
             </span>
           </button>
 
-          <ul className="flex items-center gap-8">
+          <ul className="flex items-center gap-6">
             {t.nav.map(({ href, label }) => (
               <li key={href}>
                 <button

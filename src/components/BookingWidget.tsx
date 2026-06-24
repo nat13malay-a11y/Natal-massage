@@ -241,6 +241,7 @@ export default function BookingWidget() {
   const [payment, setPayment] = useState<PaymentState | null>(null)
   const [mounted, setMounted] = useState(false)
   const bookingRef = useRef<HTMLElement | null>(null)
+  const scrollFlipToken = useRef(0)
 
   const monthStart = useMemo(() => startOfCalendarMonthGrid(monthAnchor), [monthAnchor])
   const monthEnd = useMemo(() => endOfCalendarMonthGrid(monthAnchor), [monthAnchor])
@@ -379,22 +380,60 @@ export default function BookingWidget() {
     return () => window.clearInterval(interval)
   }, [payment?.invoiceId, payment?.confirmed, payment?.failed])
 
-  const chooseDate = (day: BookingDay) => {
+  const scrollToBookingStart = () => new Promise<void>((resolve) => {
+    const element = bookingRef.current
+    if (!element) {
+      resolve()
+      return
+    }
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const target = Math.max(0, window.scrollY + element.getBoundingClientRect().top - 88)
+
+    if (reducedMotion) {
+      window.scrollTo(0, target)
+      resolve()
+      return
+    }
+
+    let settled = false
+    const startedAt = performance.now()
+    const finish = () => {
+      if (settled) return
+      settled = true
+      resolve()
+    }
+
+    const checkPosition = () => {
+      if (settled) return
+      const closeEnough = Math.abs(window.scrollY - target) < 8
+      const timedOut = performance.now() - startedAt > 950
+
+      if (closeEnough || timedOut) {
+        finish()
+        return
+      }
+
+      window.requestAnimationFrame(checkPosition)
+    }
+
+    window.scrollTo({ top: target, behavior: 'smooth' })
+    window.requestAnimationFrame(checkPosition)
+  })
+
+  const chooseDate = async (day: BookingDay) => {
     if (!day.available) return
+
+    const token = scrollFlipToken.current + 1
+    scrollFlipToken.current = token
 
     setSelectedDate(day.date)
     setSelectedTime('')
     setFlipped(false)
     setStatus('idle')
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    bookingRef.current?.scrollIntoView({
-      behavior: reducedMotion ? 'auto' : 'smooth',
-      block: 'start',
-      inline: 'nearest',
-    })
-
-    window.setTimeout(() => setFlipped(true), reducedMotion ? 40 : 620)
+    await scrollToBookingStart()
+    if (scrollFlipToken.current === token) setFlipped(true)
   }
 
   const submitBooking = async (event: FormEvent<HTMLFormElement>) => {
@@ -511,7 +550,7 @@ export default function BookingWidget() {
   return (
     <>
       {paymentModal}
-      <section ref={bookingRef} className="booking-flip-booking contact-card">
+      <section id="booking" ref={bookingRef} className="booking-flip-booking contact-card">
         <div className={`booking-flip-scene ${flipped ? 'is-flipped' : ''}`}>
           <div className="booking-flip-inner">
             <section className="booking-face booking-face-front booking-card" aria-label={t.kicker}>
