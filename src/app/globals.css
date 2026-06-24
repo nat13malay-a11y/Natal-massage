@@ -981,6 +981,7 @@ button:focus-visible {
     linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(232, 249, 250, 0.56));
   color: #263448;
   cursor: pointer;
+  touch-action: manipulation;
   box-shadow: 0 14px 34px rgba(37, 64, 82, 0.08), var(--booking-inner);
   transition:
     transform 0.36s var(--booking-ease-pop),
@@ -1051,6 +1052,7 @@ button:focus-visible {
   background: rgba(255, 255, 255, 0.72);
   color: #4b5d73;
   cursor: pointer;
+  touch-action: manipulation;
   padding: 0 16px;
   font-size: 14px;
   font-weight: 950;
@@ -1153,6 +1155,7 @@ button:focus-visible {
   background: transparent;
   color: #263448;
   cursor: pointer;
+  touch-action: manipulation;
   text-align: left;
 }
 
@@ -1300,6 +1303,17 @@ button:focus-visible {
   }
 }
 
+@keyframes bookingMobileFaceIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (max-width: 720px) {
   .booking-flip-booking {
     width: min(calc(100% + 20px), calc(100vw - 16px));
@@ -1314,6 +1328,49 @@ button:focus-visible {
   .booking-flip-booking .booking-card,
   .booking-flip-booking .booking-form {
     min-height: 700px;
+  }
+
+  .booking-flip-booking .booking-flip-scene {
+    perspective: none;
+  }
+
+  .booking-flip-booking .booking-flip-inner,
+  .booking-flip-booking .booking-flip-scene.is-flipped .booking-flip-inner {
+    transform: none;
+  }
+
+  .booking-flip-booking .booking-face {
+    position: relative;
+    inset: auto;
+    transform-style: flat;
+    backface-visibility: visible;
+    -webkit-backface-visibility: visible;
+    transition: opacity 0.24s ease, transform 0.24s ease;
+  }
+
+  .booking-flip-booking .booking-face-front,
+  .booking-flip-booking .booking-face-back {
+    transform: none;
+  }
+
+  .booking-flip-booking .booking-face-back {
+    display: none;
+  }
+
+  .booking-flip-booking .booking-flip-scene.is-flipped .booking-face-front {
+    display: none;
+  }
+
+  .booking-flip-booking .booking-flip-scene.is-flipped .booking-face-back {
+    display: block;
+    opacity: 1;
+    pointer-events: auto;
+    animation: bookingMobileFaceIn 0.24s ease both;
+  }
+
+  .booking-flip-booking .booking-face-front .booking-card > *,
+  .booking-flip-booking .booking-face-back .booking-form > * {
+    transform: none;
   }
 
   .booking-flip-booking .booking-card,

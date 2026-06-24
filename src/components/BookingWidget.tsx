@@ -242,6 +242,7 @@ export default function BookingWidget() {
   const [mounted, setMounted] = useState(false)
   const bookingRef = useRef<HTMLElement | null>(null)
   const scrollFlipToken = useRef(0)
+  const touchActionAt = useRef(0)
 
   const monthStart = useMemo(() => startOfCalendarMonthGrid(monthAnchor), [monthAnchor])
   const monthEnd = useMemo(() => endOfCalendarMonthGrid(monthAnchor), [monthAnchor])
@@ -436,6 +437,28 @@ export default function BookingWidget() {
     if (scrollFlipToken.current === token) setFlipped(true)
   }
 
+  const backToCalendar = () => {
+    scrollFlipToken.current += 1
+    setFlipped(false)
+    setSelectedTime('')
+    setStatus('idle')
+  }
+
+  const chooseTime = (available: boolean, time: string) => {
+    if (!available) return
+    setSelectedTime(time)
+    setStatus('idle')
+  }
+
+  const runTouchAction = (action: () => void) => {
+    const now = Date.now()
+    if (now - touchActionAt.current < 350) return
+    touchActionAt.current = now
+    action()
+  }
+
+  const shouldIgnoreSyntheticClick = () => Date.now() - touchActionAt.current < 500
+
   const submitBooking = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (sending) return
@@ -612,7 +635,19 @@ export default function BookingWidget() {
                                 <button
                                   type="button"
                                   disabled={disabled}
-                                  onClick={() => chooseDate(day)}
+                                  onClick={() => {
+                                    if (shouldIgnoreSyntheticClick()) return
+                                    chooseDate(day)
+                                  }}
+                                  onTouchEnd={(event) => {
+                                    event.preventDefault()
+                                    runTouchAction(() => chooseDate(day))
+                                  }}
+                                  onPointerUp={(event) => {
+                                    if (event.pointerType !== 'touch') return
+                                    event.preventDefault()
+                                    runTouchAction(() => chooseDate(day))
+                                  }}
                                   className={[
                                     'day-cell',
                                     selected ? 'is-selected' : '',
@@ -644,9 +679,17 @@ export default function BookingWidget() {
                   className="back-to-calendar"
                   type="button"
                   onClick={() => {
-                    setFlipped(false)
-                    setSelectedTime('')
-                    setStatus('idle')
+                    if (shouldIgnoreSyntheticClick()) return
+                    backToCalendar()
+                  }}
+                  onTouchEnd={(event) => {
+                    event.preventDefault()
+                    runTouchAction(backToCalendar)
+                  }}
+                  onPointerUp={(event) => {
+                    if (event.pointerType !== 'touch') return
+                    event.preventDefault()
+                    runTouchAction(backToCalendar)
                   }}
                 >
                   ← {t.back}
@@ -680,9 +723,17 @@ export default function BookingWidget() {
                           className="time-row-head"
                           disabled={!slot.available}
                           onClick={() => {
-                            if (!slot.available) return
-                            setSelectedTime(slot.time)
-                            setStatus('idle')
+                            if (shouldIgnoreSyntheticClick()) return
+                            chooseTime(slot.available, slot.time)
+                          }}
+                          onTouchEnd={(event) => {
+                            event.preventDefault()
+                            runTouchAction(() => chooseTime(slot.available, slot.time))
+                          }}
+                          onPointerUp={(event) => {
+                            if (event.pointerType !== 'touch') return
+                            event.preventDefault()
+                            runTouchAction(() => chooseTime(slot.available, slot.time))
                           }}
                         >
                           <span className="time-value">{slot.time}</span>
